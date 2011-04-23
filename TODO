@@ -1,0 +1,35 @@
+
+# Random things to do, not fully expanded, not in order of importance
+
+- Enable L1i
+- Enable L1d
+- Enable L2
+- Enable TLB
+- Enable BAT
+
+- Memory manager
+
+
+- Scheduler
+
+- Error handler
+-- Exception handler
+--- Vectors
+--- Install function
+-- Dumps
+
+- Logging system
+
+- IPC
+
+- Serial port
+-- Output
+--- stdout, stderr
+-- Input
+--- stdin
+
+- System shell
+-- Command registration
+-- Command execution
+
+- Load ELF files
