@@ -1,0 +1,25 @@
+# Ebony running the ppcOS
+
+if not defined kernel_image {$kernel_image = "u-boot-1.1.2"}
+
+add-directory "%script%"
+
+run-command-file "%script%/ebony-system.include"
+
+instantiate-components
+
+$eth_comp = $system
+$eth_cnt = emac0
+run-command-file "%simics%/targets/common/add-eth-link.include"
+
+run-command-file "%script%/ebony-setup.include"
+
+$plb = ($system.get-component-object plb)
+$plb.load-binary $ebony_u_boot 0x100000000
+
+# The initrd image overwrites the MAC addresses, restore here
+@from components import mac_as_list
+@plb = sim.objects[simenv.system].object_list['plb']
+@plb.memory[[0x1fffffe0c, 0x1fffffe11]] = mac_as_list(simenv.mac_address)
+@plb.memory[[0x1fffffe18, 0x1fffffe1d]] = mac_as_list(simenv.mac_address1)
+

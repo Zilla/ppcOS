@@ -1,0 +1,40 @@
+// Main graph
+digraph OS
+{
+// Global settings
+node[shape=box]
+
+// Nodes
+crt0[label="CRT0"]
+inth[label="Interrupt Handler"]
+procsh[label="Process Scheduler"]
+diskd[label="Disk Driver"]
+uartd[label="UART Driver"]
+ethd[label="Ethernet Driver"]
+mm[label="Memory Manager"]
+fs[label="File System"]
+tty[label="TTY"]
+shell[label="Shell"]
+ip[label="IPv4 Stack"]
+//ipv6[label="IPv6 Stack"]
+tcp[label="TCP"]
+udp[label="UDP"]
+arp[label="ARP"]
+icmp[label="ICMP"]
+telnetd[label="Telnetd"]
+errorh[label="Error Handler"]
+log[label="Log"]
+
+// Relations
+crt0->inth->procsh
+procsh->{diskd uartd ethd mm}
+inth->mm
+diskd->fs
+uartd->tty->shell
+{mm ethd}->ip
+ip->{tcp udp arp icmp}
+tcp->telnetd
+shell->telnetd [style=dashed]
+mm->{errorh log}
+fs->log [style=dashed]
+}
