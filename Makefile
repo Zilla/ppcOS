@@ -1,9 +1,14 @@
 CC=powerpc-eabi-gcc
 CFLAGS=-c -Wall
 LDFLAGS=-T kernel.lcf
+DOT=dot
+IMGTYPE=-Tpng
 
 
 all: make-all
+
+docs:
+	$(DOT) $(IMGTYPE) -o doc/os.png doc/os.dot
 
 make-all: start.o start-asm.o
 	$(CC) $(LDFLAGS) build/start.o build/start-asm.o -o kernel.ppc.elf
