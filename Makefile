@@ -1,6 +1,6 @@
 CC=powerpc-eabi-gcc
 CFLAGS=-c -Wall
-LDFLAGS=-T kernel.lcf
+LDFLAGS=-T src/kernel.lcf
 DOT=dot
 IMGTYPE=-Tpng
 

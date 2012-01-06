@@ -23,16 +23,30 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Reset vector instruction */
+	.section .reset,"ax"
+	.global _reset
+_reset:
+	b	_init_tlb
+
+/* Initial setup of TLBs */
+	.section .init_tlb,"ax"
+	.global _init_tlb
+	
+_init_tlb:
+	li 0,0
+	b _start
+
 /* OS entry point
  *
- * .text starts at 0x1000000
+ * .text starts at 0xFFF00000
  */
 
 	.section .start,"ax"
 	.global _start
 _start:
 	/* Clear MSR */
-	mtmsr 0
+	mtmsr	0
 	isync
 	sync
 

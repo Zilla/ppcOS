@@ -15,7 +15,9 @@ run-command-file "%simics%/targets/common/add-eth-link.include"
 run-command-file "%simics%/targets/ebony/ebony-setup.include"
 
 $plb = ($system.get-component-object plb)
-$plb.load-file $kernel_image 0x0800000
+#$plb.load-binary $kernel_image 0x0 #0xFFA00000
+$plb.load-file $kernel_image 0x1ffe00000
+
 
 # The initrd image overwrites the MAC addresses, restore here
 #@from components import mac_as_list

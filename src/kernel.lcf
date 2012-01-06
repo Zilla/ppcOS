@@ -28,18 +28,31 @@
 
 MEMORY
 {
-	data	: ORIGIN = 0x0800000, LENGTH = 0x0100000
-	text	: ORIGIN = 0x1000000, LENGTH = 0x0100000
+	data	: ORIGIN = 0xFFE00000, LENGTH = 0x0100000
+	text	: ORIGIN = 0xFFF00000, LENGTH = 0x0100000
+	init	: ORIGIN = 0xFFFFF000, LENGTH = 0xFFB
+	reset	: ORIGIN = 0xFFFFFFFC, LENGTH = 0x4
 }
 
 /* Define program entry point */
 
-ENTRY(_start)
+ENTRY(_reset)
 
 /* Define regions for linked file */
 
 SECTIONS
 {
+	/* Reset section contains reset vector instruction */
+	.reset :
+	{
+		*(.reset)
+	} > reset
+
+	.init_tlb :
+	{
+		*(.init_tlb)
+	} > init
+
 	/* .data section contains static data (e.g. strings etc) */
 	.data :
 	{
