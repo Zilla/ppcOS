@@ -10,6 +10,9 @@ all: make-all
 docs:
 	$(DOT) $(IMGTYPE) -o doc/os.png doc/os.dot
 
+emu:
+	./scripts/start_simics.sh
+
 make-all: start.o start-asm.o
 	$(CC) $(LDFLAGS) build/start.o build/start-asm.o -o kernel.ppc.elf
 	powerpc-eabi-objcopy -O binary kernel.ppc.elf kernel.ppc.bin

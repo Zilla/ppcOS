@@ -26,4 +26,5 @@
 
 void startOS()
 {
+     while(1) ;
 }

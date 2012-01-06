@@ -24,10 +24,11 @@ icmp[label="ICMP",color=red]
 telnetd[label="Telnetd",color=red]
 errorh[label="Error Handler"]
 log[label="Log",color=red]
+rtc[label="RTC"]
 
 // Relations
 crt0->inth->procsh
-procsh->{diskd uartd ethd mm}
+procsh->{diskd uartd ethd mm rtc}
 inth->mm
 diskd->fs
 uartd->tty->shell
