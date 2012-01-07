@@ -26,5 +26,7 @@
 
 void startOS()
 {
+     volatile char *dummy="Dummy string to force .data section in elf";
+
      while(1) ;
 }

@@ -1,5 +1,6 @@
 # Ebony running the ppcOS
 
+if not defined boot_loader  {$boot_loader  = "loader.ppc.bin"}
 if not defined kernel_image {$kernel_image = "kernel.ppc.bin"}
 
 add-directory "%script%"
@@ -15,13 +16,12 @@ run-command-file "%simics%/targets/common/add-eth-link.include"
 run-command-file "%simics%/targets/ebony/ebony-setup.include"
 
 $plb = ($system.get-component-object plb)
-#$plb.load-binary $kernel_image 0x0 #0xFFA00000
-$plb.load-file $kernel_image 0x1ffe00000
 
+# Put boot loader on flash area #2
+# This area will be mapped by S-TLB 0 at startup
+$plb.load-file $boot_loader 0x1FFFFF000
 
-# The initrd image overwrites the MAC addresses, restore here
-#@from components import mac_as_list
-#@plb = sim.objects[simenv.system].object_list['plb']
-#@plb.memory[[0x1fffffe0c, 0x1fffffe11]] = mac_as_list(simenv.mac_address)
-#@plb.memory[[0x1fffffe18, 0x1fffffe1d]] = mac_as_list(simenv.mac_address1)
-
+# Put kernel image in flash area #1
+# We will TLB map this area in the boot loader
+# then copy the image to RAM and run it.
+$plb.load-file $kernel_image 0x1FFC00000
