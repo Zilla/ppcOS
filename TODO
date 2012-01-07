@@ -1,6 +1,13 @@
 
 # Random things to do, not fully expanded, not in order of importance
 
+- Remove hardcoded addresses in boot loader
+- Improve image copy routine
+
+- Fix initial jump to C-code
+
+- Implement a (static) configuration system
+
 - Enable L1i
 - Enable L1d
 - Enable L2
@@ -8,7 +15,6 @@
 - Enable BAT
 
 - Memory manager
-
 
 - Scheduler
 

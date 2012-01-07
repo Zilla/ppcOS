@@ -1,4 +1,7 @@
 
-1. Set up a cross-compile toolchain, as described in HOWTO.compile
-2. Set up QEMU, as described in HOWTO.qemu
-3. Start everything, as described in HOWTO.run
+1. Set up a cross-compile toolchain for powerpc-eabi.
+   For an example, see http://www.ifp.illinois.edu/~nakazato/tips/xgcc.html
+
+2. Install Virtutech Simics, and create a new workspace in ../simics-ppc/
+
+3. Build the kernel and boot loader with 'make all', and run it with 'make emu'

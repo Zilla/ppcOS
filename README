@@ -1,1 +1,9 @@
-This project is ment to be a tiny soft RTOS kernel. Designed purely for learning reasons, it is not intended to ever become anything useful.
+This project implements a tiny soft RTOS kernel.
+
+Core fetures will include a process scheduler, interrupt handler,
+error handler and RTC.
+
+Drivers will be provided for the UART and Ethernet parts of the
+Ebony PPC440GP board.
+
+Finally, a small shell and IP stack will be implemented.
