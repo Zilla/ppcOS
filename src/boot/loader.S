@@ -93,13 +93,55 @@ _init_tlb:
 #;      Force CPU to update shadow TLB
 	isync
 	
-	b 	_loopy
+	b 	_copy_kernel_image
 
-_loopy:
-	b 	_loopy
+#;************************************************************
+#; This function copies the kernel image from flash to RAM.
+#; For now, everything is hardcoded.
+#; Also, this copy rutine is horribly ineffective.
+#;************************************************************
 
+_copy_kernel_image:
 
+#;	Load start address into r1
+	li	1,0xFFC
+	slwi	1,1,20
 
+#;	Load end address into r2	
+	li	2,0xFFE
+	slwi	2,2,20
+	subi	2,2,4
+	
+#;	Load target address into r3
+	li	3,0x00F
+	slwi	3,3,20
+
+#;	Copy first word
+	lwz	10,0(1)
+	stw	10,0(3)
+
+_copy_loop:
+#;	Loop and copy the rest of the words
+	cmpw	1,2		#; Check if copy is done
+	beq	_start_kernel	#; Start kernel	
+	lwzu	10,4(1)
+	stwu	10,4(3)
+	b	_copy_loop
+
+#;************************************************************
+#; This function branches to (executes) the kernel start point.
+#; For now, everything is hardcoded.
+#;************************************************************
+
+_start_kernel:
+	
+#;	Invalidate Link Register to avoid accidents.
+	li	0,0
+	mtlr	0
+	
+#;	Branch to kernel start point
+	ba	0x01000000
+	
 #;************************************************************
 #; This function builds a TLB entry and writes it to the MMU
 #; The input paramters are:

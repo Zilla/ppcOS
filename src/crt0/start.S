@@ -25,14 +25,25 @@
 
 #; OS entry point
 #;
-#; .text starts at 0xFFF00000
+#; .text starts at 0x01000000
 #;
 
 	.section .start,"ax"
 	.global _start
 _start:
+	
+#;	Clear MSR in case this is not a power on reset
+	li	0,0
 	mtmsr	0
+
+#;	Set up r1 to data area to make GCC happy (TODO: fix this)
+	li	1,0x00F
+	slwi	1,1,20
+	addi	1,1,0x300
+
+#;	Sync processor state and context	
 	isync
 	sync
-	
+
+#;	Branch to C-code
 	b startOS
