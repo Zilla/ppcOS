@@ -46,6 +46,7 @@ SECTIONS
 		*(.reset)
 	} > reset
 
+	/* Set up initial TLBs */
 	.init_tlb :
 	{
 		*(.init_tlb)

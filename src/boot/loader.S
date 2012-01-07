@@ -1,8 +1,8 @@
 /* Copyright (c) 2011, Joakim Östlund
- * All rights reserved.
+ * All rights reserved.		
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * modification, are permitted provided that the following conditions are met: 
  *    * Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *    * Redistributions in binary form must reproduce the above copyright
@@ -46,6 +46,72 @@ _init_tlb:
 	*/
 
 	/*
+	Map the boot loaders flash area to TBL 0
+	Since our data is stored at the 33-bit address 0x1_FFF0_0000, we
+	set ERPN to 1
+	*/
+	li	0,0xFFF
+	li	1,0xFFF
+	li	2,0x1
+	li	3,0
+	bl	_create_tlb_entry
+
+	/*
+	The kernel image is stored in a 2MB flash area. We create two
+	TLB entries (1 and 2) to cover this area.   
+	*/
+	li	0,0xFFC
+	li	1,0xFFC
+	li	2,0x1
+	li	3,1
+	bl	_create_tlb_entry
+
+	li	0,0xFFD
+	li	1,0xFFD
+	li	2,0x1
+	li	3,2
+	bl	_create_tlb_entry
+
+	/*
+	Map up the RAM areas where the kernel image will be copied
+	We will map the virtual address to the same physical address,
+	thus we set ERPN to 0.
+	*/
+	li	0,0x00F
+	li	1,0x00F
+	li	2,0x0
+	li	3,3
+	bl	_create_tlb_entry
+
+	li	0,0x010
+	li	1,0x010
+	li	3,4
+	bl	_create_tlb_entry
+
+	/* Force CPU to update shadow TLB */
+	isync
+	
+	b 	_loopy
+
+_loopy:
+	b 	_loopy
+
+
+
+/************************************************************
+ * This function builds a TLB entry and writes it to the MMU
+ * The input paramters are:
+ * r0 - EPN
+ * r1 - RPN
+ * r2 - ERPN
+ * r3 - TLB index
+ *
+ * The input registers will not be touched. However,
+ * r5, r6, r7 and r10 will be overwritten
+ ************************************************************/
+	
+_create_tlb_entry:
+	/*
 	Each TLB entry consists of 96 + 8 bits of information.
 	
 	Since we cannot write this in one operation, three TLB words will
@@ -54,7 +120,7 @@ _init_tlb:
 	*/
 
 	/*
-	Build word 0 in r0.
+	Build word 0 in r5.
 	
 	Word 0 consists of the following components:
         EPN:V:TS:SIZE:TPAR:TID
@@ -62,7 +128,7 @@ _init_tlb:
 	EPN is the Effective Page Number, and is the base of the virtual
 	address that the page relates to. The EPN field is 22 bits wide,
 	but only 32 - log2(page_size) bits are used. We will set bit 0:11
-	to 0xFFE for our data page.
+	to the value of r0
 
 	V is the valid bit. We will set this to 1.
 
@@ -76,22 +142,21 @@ _init_tlb:
 
 	TID is the Translation ID, and identifies the process owning the page.
 	Global pages have TID = 0, and this is what we will use.
-	This value is not set in r0, but rather in MMUCR[STID].
+	This value is not set in r5, but rather in MMUCR[STID].
 	*/
 
 	/* EPN */
-	li	10,0xFFE
-	slwi	0,10,20
+	slwi	5,0,20
 
 	/* V */
 	li	10,1
 	slwi	10,10,9
-	or	0,0,10
+	or	5,5,10
 
 	/* SIZE */
 	li	10,5
 	slwi	10,10,4
-	or	0,0,10
+	or	5,5,10
 
 	/* TID */
 	mfspr	10,0x3B2
@@ -99,32 +164,30 @@ _init_tlb:
 	mtspr	0x3B2,10
 
 	/*
-	Build word 1 in r1.
+	Build word 1 in r6.
 	
 	Word 1 consists of the following components:
         RPN:PAR1:EPN
 
 	RPN is the Real Page Number, and is the base of the physical
 	address that the page relates to. The rules for RPN is the same
-	as for EPB above. We will set bit 0:11 to 0xFFE for our data page.
+	as for EPB above. We will set bit 0:11 to the value of r2.
 
 	PAR1 are the parity bits for page 1, and are ignored at write.
 
-	EPN is the Extended Real Page Number, and is used together with RPN
+	ERPN is the Extended Real Page Number, and is used together with RPN
 	and the Effective Address (EA) to create a 36-bit physical address.
-	Since our data is stored at the 33-bit address 0x1_FFE0_0000, we
-	set this to 1.
+	We will set this to the value of r3.
 	*/
 
 	/* RPN */
-	li	10,0xFFE
-	slwi	1,10,20
+	slwi	6,1,20
 
-	li	10,1
-	or	1,1,10
+	/* ERPN */
+	or	6,6,2
 
 	/*
-	Build word 2 in r2.
+	Build word 2 in r7.
 
 	Word 2 consists of the following components:
 	PAR2:U[0-4]:W:I:M:G:E:U[XWR]:S[XWR]
@@ -156,56 +219,26 @@ _init_tlb:
 
 	/* I */
 	li	10,1
-	slwi	2,10,10
+	slwi	7,10,10
 
 	/* G */
 	li	10,1
 	slwi	10,10,8
-	or	2,2,10
+	or	7,7,10
 
 	/* SX, SW, SR */
 	li	10,7 		/* 0b111 */
-	or	2,2,10
+	or	7,7,10
 
-	/* Write TLB Entry 0, Word 0 */
-	li	4,0
-	tlbwe	0,4,0
+	/* Write TLB Entry, Word 0 */
+	tlbwe	5,3,0
 
-	/* Write TLB Entry 0, Word 1 */
-	tlbwe	1,4,1
+	/* Write TLB Entry, Word 1 */
+	tlbwe	6,3,1
 
-	/* Write TLB Entry 0, Word 2 */
-	tlbwe	2,4,2
+	/* Write TLB Entry, Word 2 */
+	tlbwe	7,3,2
 
-	/*isync*/
-
-	/*
-	The TLB words for entry 1 will be the same as for entry 0,
-	except that EPN and RPN will be set to 0xFFF
-	*/
-
-	/* Modify EPN */
-	li	10,1
-	slwi	10,10,20
-	or	0,0,10
-
-	/* Modify RPN */
-	or	1,1,10
-
-	/* Write TLB Entry 1, Word 0 */
-	li	4,1
-	tlbwe	0,4,0
-
-	/* Write TLB Entry 1, Word 1 */
-	tlbwe	1,4,1
-
-	/* Write TLB Entry 1, Word 2 */
-	tlbwe	2,4,2
-
-	isync
-	
-	b 	_loopy
-
-_loopy:
-	b 	_loopy
+	/* Return to caller */
+	blr
 
