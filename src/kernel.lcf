@@ -28,7 +28,8 @@
 
 MEMORY
 {
-	data	: ORIGIN = 0x00F00000, LENGTH = 0x0100000
+	data	: ORIGIN = 0x00F00000, LENGTH = 0x0070000
+	heap	: ORIGIN = 0x00F70000, LENGTH = 0x0090000
 	text	: ORIGIN = 0x01000000, LENGTH = 0x0100000
 }
 
@@ -48,6 +49,15 @@ SECTIONS
 		*(.rodata)
 	} > data
 
+	.heap :
+	AT ( ADDR(.data) + SIZEOF (.data) )
+	{
+		heap_low = .;
+		. = . + 0x80000;
+		heap_top = .;
+		. = . + (0x10000 - 0x10); /* 64k stack */
+		stack_top = .;
+	} > heap
 	/* .text contains compiled code */
 	.text :
 	{

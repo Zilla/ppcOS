@@ -1,7 +1,7 @@
 CC=powerpc-eabi-gcc
-CFLAGS=-c -Wall
-LDFLAGS=-T src/kernel.lcf -nostdlib
-LOADERLFFLAGS=-T src/boot.lcf -nostdlib
+CFLAGS=-c -Wall -Isrc/ -Inewlib/powerpc-eabi/include -fno-builtin
+LDFLAGS=-T src/kernel.lcf -nostdlib -fno-builtin
+LOADERLFFLAGS=-T src/boot.lcf -nostdlib -fno-builtin
 DOT=dot
 IMGTYPE=-Tpng
 
@@ -16,8 +16,8 @@ emu:
 
 make-all: kernel loader
 
-kernel: start.o start-asm.o
-	$(CC) $(LDFLAGS) build/start.o build/start-asm.o -o kernel.ppc.elf
+kernel: start.o start-asm.o mm.o syscall_stubs.o
+	$(CC) $(LDFLAGS) build/syscall_stubs.o build/start.o build/start-asm.o build/mm.o newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a -o kernel.ppc.elf
 	powerpc-eabi-objcopy -O binary kernel.ppc.elf kernel.ppc.bin
 
 loader:	loader.o
@@ -28,10 +28,16 @@ start.o:
 	$(CC) $(CFLAGS) src/crt0/start.c -o build/start.o
 
 start-asm.o:
-	$(CC) $(CFLAGS) src/crt0/start.S -o build/start-asm.o
+	$(CC) $(CFLAGS) -mregnames src/crt0/start.S -o build/start-asm.o
 
 loader.o:
-	$(CC) $(CFLAGS) src/boot/loader.S -o build/loader.o
+	$(CC) $(CFLAGS) -mregnames src/boot/loader.S -o build/loader.o
+
+mm.o:
+	$(CC) $(CFLAGS) src/mm/mm.c -o build/mm.o
+
+syscall_stubs.o:
+	$(CC) $(CFLAGS) src/stubs/syscall_stubs.c -o build/syscall_stubs.o
 
 clean:
 	rm -f kernel.ppc.elf

@@ -54,40 +54,38 @@ _init_tlb:
 #;	Map the boot loader flash area to TBL 0
 #;	Since our data is stored at the 33-bit physical address 0x1_FFF0_0000,
 #;	we set ERPN to 1
-	li	0,0xFFF
-	li	1,0xFFF
-	li	2,0x1
-	li	3,0
+	li	r0,0xFFF
+	li	r1,0xFFF
+	li	r2,0x1
+	li	r3,0
 	bl	_create_tlb_entry
 
 	
 #;	The kernel image is stored in a 2MB flash area. We create two
 #;	TLB entries (1 and 2) to cover this area.   
-	li	0,0xFFC
-	li	1,0xFFC
-	li	2,0x1
-	li	3,1
+	li	r0,0xFFC
+	li	r1,0xFFC
+	li	r3,1
 	bl	_create_tlb_entry
 
-	li	0,0xFFD
-	li	1,0xFFD
-	li	2,0x1
-	li	3,2
+	li	r0,0xFFD
+	li	r1,0xFFD
+	li	r3,2
 	bl	_create_tlb_entry
 
 	
 #;	Map up the RAM areas where the kernel image will be copied
 #;	We will map the virtual address to the same physical address,
 #;	thus we set ERPN to 0.
-	li	0,0x00F
-	li	1,0x00F
-	li	2,0x0
-	li	3,3
+	li	r0,0x00F
+	li	r1,0x00F
+	li	r2,0x0
+	li	r3,3
 	bl	_create_tlb_entry
 
-	li	0,0x010
-	li	1,0x010
-	li	3,4
+	li	r0,0x010
+	li	r1,0x010
+	li	r3,4
 	bl	_create_tlb_entry
 
 #;      Force CPU to update shadow TLB
@@ -104,28 +102,28 @@ _init_tlb:
 _copy_kernel_image:
 
 #;	Load start address into r1
-	li	1,0xFFC
-	slwi	1,1,20
+	li	r1,0xFFC
+	slwi	r1,r1,20
 
 #;	Load end address into r2	
-	li	2,0xFFE
-	slwi	2,2,20
-	subi	2,2,4
+	li	r2,0xFFE
+	slwi	r2,r2,20
+	subi	r2,r2,4
 	
 #;	Load target address into r3
-	li	3,0x00F
-	slwi	3,3,20
+	li	r3,0x00F
+	slwi	r3,r3,20
 
 #;	Copy first word
-	lwz	10,0(1)
-	stw	10,0(3)
+	lwz	10,0(r1)
+	stw	10,0(r3)
 
 _copy_loop:
 #;	Loop and copy the rest of the words
-	cmpw	1,2		#; Check if copy is done
+	cmpw	r1,r2		#; Check if copy is done
 	beq	_start_kernel	#; Start kernel	
-	lwzu	10,4(1)
-	stwu	10,4(3)
+	lwzu	10,4(r1)
+	stwu	10,4(r3)
 	b	_copy_loop
 
 #;************************************************************
@@ -136,8 +134,8 @@ _copy_loop:
 _start_kernel:
 	
 #;	Invalidate Link Register to avoid accidents.
-	li	0,0
-	mtlr	0
+	li	r0,0
+	mtlr	r0
 	
 #;	Branch to kernel start point
 	ba	0x01000000
@@ -189,22 +187,22 @@ _create_tlb_entry:
 	
 
 #;	EPN 
-	slwi	5,0,20
+	slwi	r5,r0,20
 
 #;	V 
-	li	10,1
-	slwi	10,10,9
-	or	5,5,10
+	li	r10,1
+	slwi	r10,r10,9
+	or	r5,r5,10
 
 #;	SIZE 
-	li	10,5
-	slwi	10,10,4
-	or	5,5,10
+	li	r10,5
+	slwi	r10,r10,4
+	or	r5,r5,10
 
 #;	TID 
-	mfspr	10,0x3B2
-	rlwinm  10,10,0,0,23	#; Mask out bit 24:31 
-	mtspr	0x3B2,10
+	mfspr	r10,0x3B2
+	rlwinm  r10,r10,0,0,23	#; Mask out bit 24:31 
+	mtspr	0x3B2,r10
 
 	
 #;	Build word 1 in r6.
@@ -224,10 +222,10 @@ _create_tlb_entry:
 
 
 #;	RPN
-	slwi	6,1,20
+	slwi	r6,r1,20
 
 #;	ERPN
-	or	6,6,2
+	or	r6,r6,2
 
 	
 #;	Build word 2 in r7.
@@ -260,26 +258,26 @@ _create_tlb_entry:
 #;	We set all of these to 1.
 
 #;	I
-	li	10,1
-	slwi	7,10,10
+	li	r10,1
+	slwi	r7,r10,10
 
 #;	G
-	li	10,1
-	slwi	10,10,8
-	or	7,7,10
+	li	r10,1
+	slwi	r10,r10,8
+	or	r7,r7,10
 
 #;	SX, SW, SR
-	li	10,7 		#; 0b111 
-	or	7,7,10
+	li	r10,7 		#; 0b111 
+	or	r7,r7,10
 
 #;	Write TLB Entry, Word 0
-	tlbwe	5,3,0
+	tlbwe	r5,r3,0
 
 #;	Write TLB Entry, Word 1
-	tlbwe	6,3,1
+	tlbwe	r6,r3,1
 
 #;	Write TLB Entry, Word 2
-	tlbwe	7,3,2
+	tlbwe	r7,r3,2
 
 #;	Return to caller 
 	blr

@@ -23,12 +23,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mm/mm.h"
+#ifndef _ppcos__mm_h_
+#define _ppcos_mm_h_
 
-void startOS()
-{
-     /* Start the memory manager */
-     mm_init();
+/* Initialize the memory manager */
+void mm_init();
 
-     while(1) ;
-}
+#endif  /* _ppcos_mm_h_ */

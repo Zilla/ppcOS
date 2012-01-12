@@ -2,6 +2,22 @@
 1. Set up a cross-compile toolchain for powerpc-eabi.
    For an example, see http://www.ifp.illinois.edu/~nakazato/tips/xgcc.html
 
-2. Install Virtutech Simics, and create a new workspace in ../simics-ppc/
+2. Download the project somewhere, e.g. ~/projects/ppcOS/
 
-3. Build the kernel and boot loader with 'make all', and run it with 'make emu'
+3. Install Virtutech Simics, and create a new workspace in ~/projects/simics-ppc/
+
+4. Extract the newlib package somewhere on your machine
+
+5. Create a build directory for newlib, e.g. ~/projects/newlib/
+
+6. cd ~/projects/newlib/
+
+7. /path/to/newlib/configure --target=powerpc-eabi --prefix=~/projects/ppcOS/newlib --disable-newlib-supplied-syscalls
+
+8. make
+
+9. make install
+
+10. cd ~/projects/ppcOS/
+
+11. Build the kernel and boot loader with 'make all', and run it with 'make emu'

@@ -33,13 +33,12 @@
 _start:
 	
 #;	Clear MSR in case this is not a power on reset
-	li	0,0
-	mtmsr	0
+	li	r0,0
+	mtmsr	r0
 
-#;	Set up r1 to data area to make GCC happy (TODO: fix this)
-	li	1,0x00F
-	slwi	1,1,20
-	addi	1,1,0x300
+#;	GCC uses r1 as a stack pointer
+	lis	r1,stack_top@ha
+	addi	r1,r1,stack_top@l
 
 #;	Sync processor state and context	
 	isync

@@ -23,12 +23,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mm/mm.h"
+#include "mm.h"
+#include "malloc.h"
 
-void startOS()
+/************************************************************************
+ * This function initilizes the Memory Manager.
+ * It will set up the internal data structures needed, and create memory
+ * regions for the kernel and the MM data area.
+ ************************************************************************/
+
+void mm_init()
 {
-     /* Start the memory manager */
-     mm_init();
-
-     while(1) ;
+      malloc(1); 
 }

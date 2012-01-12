@@ -1,0 +1,4 @@
+*.o
+*.ppc.bin
+*.ppc.elf
+newlib/*

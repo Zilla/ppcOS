@@ -23,12 +23,61 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mm/mm.h"
+/* This file contains temporary stubs for newlib */
 
-void startOS()
+#include "sys/types.h"
+#include "stdlib.h"
+#include "errno.h"
+
+#undef errno
+extern int errno;
+
+extern char stack_ptr;
+
+/* Used by abort() */
+void _exit()
 {
-     /* Start the memory manager */
-     mm_init();
+}
 
-     while(1) ;
+/* Used by sbrk(), printf(), etc */
+int write(int file, char *ptr, int len)
+{
+     return len;
+}
+
+/* Used by malloc() */
+char *heap_end = 0;
+
+caddr_t sbrk(int incr)
+{
+     extern char heap_low; /* Defined by the linker */
+     extern char heap_top; /* Defined by the linker */
+     char *prev_heap_end;
+	 
+     if(heap_end == 0)
+     {
+	  heap_end = &heap_low;
+     }
+
+     prev_heap_end = heap_end;
+	 
+     if (heap_end + incr > &heap_top)
+     {
+	  /* Heap and stack collision */
+	  return (caddr_t)0;
+     }
+     
+     heap_end += incr;
+     return (caddr_t) prev_heap_end;
+}
+
+int kill(int pid, int sig)
+{
+     errno = EINVAL;
+     return -1;
+}
+
+int getpid(void)
+{
+     return 1;
 }
