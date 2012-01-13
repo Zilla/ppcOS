@@ -26,6 +26,11 @@
 #include "mm.h"
 #include "malloc.h"
 
+/* Global declaration */
+
+MemoryRegion *allocRegions;
+
+
 /************************************************************************
  * This function initilizes the Memory Manager.
  * It will set up the internal data structures needed, and create memory
@@ -34,5 +39,177 @@
 
 void mm_init()
 {
-      malloc(1); 
+     MemoryRegion *pReg;
+
+     /* Set up a TLB entry to cover .data + heap and stack for the kernel */
+     /* Hard coded for now... */
+     allocRegions = malloc(sizeof(MemoryRegion));
+
+     pReg = allocRegions;
+
+     pReg->vAddr    = 0xF00000;
+     pReg->pAddr    = 0xF00000;
+     pReg->pExtAddr = 0;
+     pReg->owner    = MM_GLOBAL_REGION;
+     pReg->size     = TLB_SIZE_1MB;
+     pReg->perms    = TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_UR;
+     pReg->ts       = TLB_TS_SYSTEM;
+     pReg->attr     = TLB_ATTR_NONE;
+     pReg->tid      = MM_GLOBAL_REGION;
+
+     mm_create_tlb_entry(pReg);
+     mm_write_tlb_entry(0, pReg);
+
+     /* Set up a TLB entry to cover .text for the kernel */
+     /* Hard coded for now... */
+     pReg->pNext = malloc(sizeof(MemoryRegion));
+     pReg = pReg->pNext;
+
+     pReg->vAddr    = 0x1000000;
+     pReg->pAddr    = 0x1000000;
+     pReg->pExtAddr = 0;
+     pReg->owner    = MM_GLOBAL_REGION;
+     pReg->size     = TLB_SIZE_1MB;
+     pReg->perms    = TLB_PERM_SR|TLB_PERM_SX;
+     pReg->ts       = TLB_TS_SYSTEM;
+     pReg->attr     = TLB_ATTR_NONE;
+     pReg->tid      = MM_GLOBAL_REGION;
+
+     mm_create_tlb_entry(pReg);
+     mm_write_tlb_entry(1, pReg);
+
+     /*
+       Clear old UTLB entries.
+       The reason we do this is that having overlapping TLB entries
+       can cause a machine check exception if the memory area is accessed.
+     */
+     mm_clear_utlb(2);
+
+     /* Force update of STLB */
+     mm_invalidate_stlb();
+}
+
+/************************************************************************
+ * This function removes all entries currently in the Unified TLB
+ ************************************************************************/
+
+void mm_clear_utlb(U8 startIdx)
+{
+     U8 tlbIdx = startIdx;
+     U32 tlbWord0;
+
+     /* Loop through all 64 UTLB entries */
+     while(tlbIdx < 64)
+     {
+	  /* Read the TLB entry */
+	  asm volatile (
+	       "tlbre %0,%1,0;"
+	       : "=r"(tlbWord0)
+	       : "r"(tlbIdx)
+	       );
+
+	  /* If it is marked as valid... */
+	  if(tlbWord0 & TLB_VALID)
+	  {
+	       /* ...mark it as invalid */
+	       tlbWord0 &= TLB_VALID_MASK;
+
+	       /* Write the modified TLB entry */
+	       asm volatile (
+		    "tlbwe %0,%1,0;"
+		    : /* No output */
+		    : "r"(tlbWord0), "r"(tlbIdx)
+		    );
+	  }
+	  tlbIdx++;
+     }
+}
+
+/************************************************************************
+ * This function invalidates the Shadow TLB by
+ * forcing a context synchronization.
+ ************************************************************************/
+
+void mm_invalidate_stlb()
+{
+     asm volatile (
+	  "isync;"
+	  );
+}
+
+/************************************************************************
+ * This function writes a TLB entry to the UTLB in the MMU.
+ ************************************************************************/
+
+int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg)
+{
+     /* Check if the TLB words have been created */
+     if(!(pReg->tlbWord0 & TLB_VALID))
+	  return -1;
+
+     /* Write the TLB entry */
+     asm volatile (
+	  "tlbwe %0,%3,0;"
+	  "tlbwe %1,%3,1;"
+	  "tlbwe %2,%3,2;"
+	  : /* No output */
+	  : "r"(pReg->tlbWord0), "r"(pReg->tlbWord1), "r"(pReg->tlbWord2), "r"(tlbIdx)
+	  );
+
+     return 0;
+}
+
+/************************************************************************
+ * This function creates the TLB words for use by the MMU.
+ ************************************************************************/
+
+int mm_create_tlb_entry(MemoryRegion *pReg)
+{
+     /* Field length for (E|R)PN fields */
+     U8 pnLen = 22 - pReg->size * 2;
+     U8 i = 0;
+     U32 pnMask = 0;
+
+     /* Combination of cache inhibit and write through is not allowed */
+     if((pReg->attr & TLB_ATTR_CACHE_INHIBIT) && (pReg->attr & TLB_ATTR_WRITE_THROUGH))
+	  return -1;
+
+     /* Create a mask for Page Numbers */
+     while(i++ < pnLen)
+     {
+	  pnMask |= 1;
+	  pnMask <<= 1;
+     }
+     pnMask |= 1;
+     pnMask <<= (32-pnLen);
+
+     /* Set EPN */
+     pReg->tlbWord0 = pReg->vAddr;
+
+     /* Mask off unused bits */
+     pReg->tlbWord0 &= pnMask;
+
+     /* Set valid bit */
+     pReg->tlbWord0 |= TLB_VALID;
+
+     /* Set TS */
+     pReg->tlbWord0 |= (pReg->ts << 9);
+
+     /* Set size */
+     pReg->tlbWord0 |= (pReg->size << 4);
+
+     /* Set RPN */
+     pReg->tlbWord1  = pReg->pAddr;
+      pReg->tlbWord1 &= pnMask; 
+
+     /* Set ERPN */
+     pReg->tlbWord1 |= pReg->pExtAddr;
+
+     /* Set page attributes */
+     pReg->tlbWord2 = (pReg->attr << 6);
+
+     /* Set page permission */
+     pReg->tlbWord2 |= pReg->perms;
+
+     return 0;
 }

@@ -1,5 +1,6 @@
 CC=powerpc-eabi-gcc
-CFLAGS=-c -Wall -Isrc/ -Inewlib/powerpc-eabi/include -fno-builtin
+CFLAGS=-c -g -Wall $(INCDIRS) -fno-builtin
+INCDIRS=-Isrc/ -Inewlib/powerpc-eabi/include -Isrc/include
 LDFLAGS=-T src/kernel.lcf -nostdlib -fno-builtin
 LOADERLFFLAGS=-T src/boot.lcf -nostdlib -fno-builtin
 DOT=dot
