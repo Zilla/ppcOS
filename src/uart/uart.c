@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Joakim Östlund
+ /* Copyright (c) 2011, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,16 +23,69 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mm/mm.h"
 #include "uart/uart.h"
+#include "krntypes.h"
+#include "mm/mm.h"
+#include "stdio.h"
 
-void startOS()
+/* Globals */
+
+U8 uartInitDone = 0;
+
+/* Initilize the UART */
+
+void uart_init()
 {
-     /* Start the memory manager */
-     mm_init();
+     U8 regz;
 
-     /* Initilize the UART */
-     uart_init();
+     /* Map the UART area */
+     mm_map_region(UART_VBASE, UART_PBASE, UART_ERPN, 1024, TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_GUARDED|TLB_ATTR_CACHE_INHIBIT);
 
-     while(1) ;
+     /* Enable DLAB */
+     regz = UART_READ(UART0_LCR);
+     regz |= UART_LCR_DLAB_ENABLE;
+     UART_WRITE(UART0_LCR, regz);
+
+     /* Write divisor values */
+     UART_WRITE(UART0_DLL, UART_DLL_9600);
+     UART_WRITE(UART0_DLM, UART_DLM_9600);
+
+     /* Disable DLAB */
+     regz = UART_READ(UART0_LCR);
+     regz &= UART_LCR_DLAB_MASK;
+     UART_WRITE(UART0_LCR, regz);
+
+     /* Set serial port parameters */
+     regz = UART_READ(UART0_LCR);
+     regz |= UART_LCR_8BIT_WORD|UART_LCR_PARITY_ODD;
+     UART_WRITE(UART0_LCR, regz);
+
+     iprintf("UART initilized\n");
+}
+
+/* Used by sbrk(), printf(), etc */
+int write(int file, char *ptr, int len)
+{
+     U32 written = 0;
+     /* TODO: Defines for stdin etc */
+
+     /* We only support STDOUT here atm */
+     if( file != 1 )
+	  return len;
+
+     if( len <= 0 )
+	  return -1;
+
+     do {
+	  UART_WAIT(UART0_LSR);
+	  UART_WRITE(UART0_THR, *ptr);
+	  if(*ptr=='\n')
+	  {
+	       UART_WAIT(UART0_LSR);
+	       UART_WRITE(UART0_THR, '\r');
+	  }
+	  ptr++;
+     } while(++written != len);
+
+     return written;
 }

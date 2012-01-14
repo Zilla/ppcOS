@@ -25,9 +25,10 @@
 
 /* This file contains temporary stubs for newlib */
 
-#include "sys/types.h"
-#include "stdlib.h"
-#include "errno.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #undef errno
 extern int errno;
@@ -37,12 +38,6 @@ extern char stack_ptr;
 /* Used by abort() */
 void _exit()
 {
-}
-
-/* Used by sbrk(), printf(), etc */
-int write(int file, char *ptr, int len)
-{
-     return len;
 }
 
 /* Used by malloc() */
@@ -80,4 +75,30 @@ int kill(int pid, int sig)
 int getpid(void)
 {
      return 1;
+}
+
+int close(int file)
+{
+     return -1;
+}
+
+int fstat(int file, struct stat *st)
+{
+     st->st_mode = S_IFCHR;
+     return 0;
+}
+
+int isatty(int file)
+{
+     return 1;
+}
+
+int lseek(int file, int ptr, int dir)
+{
+     return 0;
+}
+
+int read(int file, char *ptr, int len)
+{
+     return 0;
 }

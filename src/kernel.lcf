@@ -47,6 +47,7 @@ SECTIONS
 		*(.data)
 		*(.data.*)
 		*(.rodata)
+		*(.sbss)
 	} > data
 
 	.heap :

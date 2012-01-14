@@ -25,3 +25,6 @@ $plb.load-file $boot_loader 0x1FFFFF000
 # We will TLB map this area in the boot loader
 # then copy the image to RAM and run it.
 $plb.load-file $kernel_image 0x1FFC00000
+
+new-symtable
+st0.load-symbols kernel.ppc.elf

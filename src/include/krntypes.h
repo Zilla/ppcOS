@@ -35,4 +35,8 @@
 #define U64 unsigned long long
 #define S64 long long
 
+#ifndef NULL
+#define NULL 0L
+#endif /* NULL */
+
 #endif  /* _ppcos_krntypes_h_ */

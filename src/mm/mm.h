@@ -94,5 +94,6 @@ int mm_create_tlb_entry(MemoryRegion *pReg);
 int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg);
 int mm_allocate_region(U32 size, U32 base);
 void mm_invalidate_stlb();
+int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr);
 
 #endif  /* _ppcos_mm_h_ */

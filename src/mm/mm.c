@@ -28,7 +28,10 @@
 
 /* Global declaration */
 
-MemoryRegion *allocRegions;
+MemoryRegion *allocRegions = NULL;
+
+/* Use this until we have decided on a page replacement strategy */
+U8 currTlbIdx = 0;
 
 
 /************************************************************************
@@ -58,7 +61,7 @@ void mm_init()
      pReg->tid      = MM_GLOBAL_REGION;
 
      mm_create_tlb_entry(pReg);
-     mm_write_tlb_entry(0, pReg);
+     mm_write_tlb_entry(currTlbIdx++, pReg);
 
      /* Set up a TLB entry to cover .text for the kernel */
      /* Hard coded for now... */
@@ -74,9 +77,10 @@ void mm_init()
      pReg->ts       = TLB_TS_SYSTEM;
      pReg->attr     = TLB_ATTR_NONE;
      pReg->tid      = MM_GLOBAL_REGION;
+     pReg->pNext    = NULL;
 
      mm_create_tlb_entry(pReg);
-     mm_write_tlb_entry(1, pReg);
+     mm_write_tlb_entry(currTlbIdx++, pReg);
 
      /*
        Clear old UTLB entries.
@@ -200,16 +204,111 @@ int mm_create_tlb_entry(MemoryRegion *pReg)
 
      /* Set RPN */
      pReg->tlbWord1  = pReg->pAddr;
-      pReg->tlbWord1 &= pnMask; 
+     pReg->tlbWord1 &= pnMask; 
 
      /* Set ERPN */
      pReg->tlbWord1 |= pReg->pExtAddr;
 
      /* Set page attributes */
-     pReg->tlbWord2 = (pReg->attr << 6);
+     pReg->tlbWord2 = (pReg->attr << 7);
 
      /* Set page permission */
      pReg->tlbWord2 |= pReg->perms;
+
+     return 0;
+}
+
+/************************************************************************
+ * This function creates a TLB mapping for a memory area.
+ ************************************************************************/
+
+int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr)
+{
+     MemoryRegion *pReg;
+
+     if( size == 0 )
+	  return -1;
+
+     /* TODO: Add checks on addresses vs existing regions */
+     /* TODO: Check address aligned on size */
+
+     pReg = allocRegions;
+     while(pReg->pNext)
+	  pReg = pReg->pNext;
+
+     while(size > 0)
+     {
+	  pReg->pNext = malloc(sizeof(MemoryRegion));
+	  pReg = pReg->pNext;
+
+	  pReg->vAddr    = vBase;
+	  pReg->pAddr    = pBase;
+	  pReg->pExtAddr = erpn;
+	  pReg->owner    = MM_GLOBAL_REGION;
+	  pReg->perms    = perms;
+	  pReg->ts       = TLB_TS_SYSTEM;
+	  pReg->attr     = attr;
+	  pReg->tid      = MM_GLOBAL_REGION;
+
+	  /* TODO: Rewrite this... */
+	  if(size >= 256*1024*1024)
+	  {
+	       pReg->size = TLB_SIZE_256MB;
+	       size -= 256*1024*1024;
+	       vBase += 256*1024*1024;
+	       pBase += 256*1024*1024;
+	  }
+	  else if(size >= 16*1024*1024)
+	  {
+	       pReg->size = TLB_SIZE_16MB;
+	       size -= 16*1024*1024;
+	       vBase += 16*1024*1024;
+	       pBase += 16*1024*1024;
+	  }
+	  else if(size >= 1024*1024)
+	  {
+	       pReg->size = TLB_SIZE_1MB;
+	       size -= 1024*1024;
+	       vBase += 1024*1024;
+	       pBase += 1024*1024;
+	  }
+	  else if(size >= 256*1024)
+	  {
+	       pReg->size = TLB_SIZE_256KB;
+	       size -= 256*1024;
+	       vBase += 256*1024;
+	       pBase += 256*1024;
+	  }
+	  else if(size >= 64*1024)
+	  {
+	       pReg->size = TLB_SIZE_64KB;
+	       size -= 64*1024;
+	       vBase += 64*1024;
+	       pBase += 64*1024;
+	  }
+	  else if(size >= 16*1024)
+	  {
+	       pReg->size = TLB_SIZE_16KB;
+	       size -= 16*1024;
+	       vBase += 16*1024;
+	       pBase += 16*1024;
+	  }
+	  else if(size >= 4*1024)
+	  {
+	       pReg->size = TLB_SIZE_4KB;
+	       size -= 4*1024;
+	       vBase += 4*1024;
+	       pBase += 4*1024;
+	  }
+	  else if(size >= 1024)
+	  {
+	       pReg->size = TLB_SIZE_1KB;
+	       size = 0;
+	  }
+
+	  mm_create_tlb_entry(pReg);
+	  mm_write_tlb_entry(currTlbIdx++, pReg);
+     }
 
      return 0;
 }
