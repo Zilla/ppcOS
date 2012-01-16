@@ -2,6 +2,9 @@
 1. Set up a cross-compile toolchain for powerpc-eabi.
    For an example, see http://www.ifp.illinois.edu/~nakazato/tips/xgcc.html
 
+   !!!! NOTE !!!!
+   Make sure to configure gcc with --with-float=soft or running the kernel will cause endless "Floating Point Unavailable" exceptions
+
 2. Download the project somewhere, e.g. ~/projects/ppcOS/
 
 3. Install Virtutech Simics, and create a new workspace in ~/projects/simics-ppc/
@@ -12,7 +15,7 @@
 
 6. cd ~/projects/newlib/
 
-7. /path/to/newlib/configure --target=powerpc-eabi --prefix=~/projects/ppcOS/newlib --disable-newlib-supplied-syscalls
+7. /path/to/newlib/configure --target=powerpc-eabi --prefix=~/projects/ppcOS/newlib --disable-newlib-supplied-syscalls --with-float=soft
 
 8. make
 

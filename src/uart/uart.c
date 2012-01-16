@@ -60,7 +60,7 @@ void uart_init()
      regz |= UART_LCR_8BIT_WORD|UART_LCR_PARITY_ODD;
      UART_WRITE(UART0_LCR, regz);
 
-     iprintf("UART initilized\n");
+     printf("UART initilized\n");
 }
 
 /* Used by sbrk(), printf(), etc */
