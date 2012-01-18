@@ -1,7 +1,7 @@
 CC=powerpc-eabi-gcc
-CFLAGS=-c -g -Wall $(INCDIRS) -fno-builtin -msoft-float
+CFLAGS=-c -g -Wall $(INCDIRS) -fno-builtin -msoft-float -mcpu=440
 INCDIRS=-Isrc/ -Inewlib/powerpc-eabi/include -Isrc/include
-LDFLAGS=-T src/kernel.lcf -fno-builtin -msoft-float
+LDFLAGS=-T src/kernel.lcf -fno-builtin -msoft-float -mcpu=440
 LOADERLFFLAGS=-T src/boot.lcf -nostdlib -fno-builtin
 DOT=dot
 IMGTYPE=-Tpng
@@ -9,16 +9,18 @@ IMGTYPE=-Tpng
 
 all: make-all
 
+.PHONY: docs
 docs:
 	$(DOT) $(IMGTYPE) -o doc/os.png doc/os.dot
 
+.PHONY: emu
 emu:
 	./scripts/start_simics.sh
 
 make-all: kernel loader
 
-kernel: start.o start-asm.o mm.o syscall_stubs.o uart.o
-	$(CC) $(LDFLAGS) build/syscall_stubs.o build/start.o build/start-asm.o build/mm.o build/uart.o newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a -o kernel.ppc.elf
+kernel: start.o start-asm.o mm.o syscall_stubs.o uart.o exception_handlers.o asm_exception_handlers.o irq.o
+	$(CC) $(LDFLAGS) build/syscall_stubs.o build/start.o build/start-asm.o build/mm.o build/uart.o  build/exception_handlers.o build/asm_exception_handlers.o build/irq.o newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a -o kernel.ppc.elf
 	powerpc-eabi-objcopy -O binary kernel.ppc.elf kernel.ppc.bin
 
 loader:	loader.o
@@ -43,6 +45,16 @@ uart.o:
 syscall_stubs.o:
 	$(CC) $(CFLAGS) src/stubs/syscall_stubs.c -o build/syscall_stubs.o
 
+exception_handlers.o:
+	$(CC) $(CFLAGS) src/irq/exception_handlers.c -o build/exception_handlers.o
+
+asm_exception_handlers.o:
+	$(CC) $(CFLAGS) -mregnames src/irq/exception_handlers.S -o build/asm_exception_handlers.o
+
+irq.o:
+	$(CC) $(CFLAGS) src/irq/irq.c -o build/irq.o
+
+.PHONY: clean
 clean:
 	rm -f kernel.ppc.elf
 	rm -f kernel.ppc.bin

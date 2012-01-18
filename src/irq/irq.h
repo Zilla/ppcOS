@@ -23,63 +23,54 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "krntypes.h"
 
-/* Define memory locations for text and data */
+#define IRQ_IVOR_BASE  0x0
+#define IRQ_IVOR_SIZE  0x100
+#define IRQ_IVOR_COUNT 0x10
+#define IRQ_STACK_BASE 0x1000
+#define IRQ_STACK_SIZE 0x400
 
-MEMORY
-{
-	data	: ORIGIN = 0x00F00000, LENGTH = 0x0070000
-	heap	: ORIGIN = 0x00F70000, LENGTH = 0x0090000
-	text	: ORIGIN = 0x01000000, LENGTH = 0x0100000
-}
+/* IVOR definitions */
+#define IRQ_IVOR_DTLB_ERR 13    /* Data TLB error (miss) */
 
-/* Define program entry point */
+/* Exception handler prototypes */
+extern void _ivor_critical_int(void);
+extern void _ivor_machine_check(void);
+extern void _ivor_data_storage(void);
+extern void _ivor_instruction_storage(void);
+extern void _ivor_external_input(void);
+extern void _ivor_alignment(void);
+extern void _ivor_program(void);
+extern void _ivor_fp_unavail(void);
+extern void _ivor_system_call(void);
+extern void _ivor_ap_unavail(void);
+extern void _ivor_decrementer(void);
+extern void _ivor_fixed_interval_timer(void);
+extern void _ivor_watchdog_timer(void);
+extern void _ivor_data_tlb_error(void);
+extern void _ivor_instruction_tlb_error(void);
+extern void _ivor_debug(void);
 
-ENTRY(_start)
 
-/* Define regions for linked file */
+/* SPRs for writing IVOR */
+#define IRQ_IVOR0     0x190
+#define IRQ_IVOR1     0x191
+#define IRQ_IVOR2     0x192
+#define IRQ_IVOR3     0x193
+#define IRQ_IVOR4     0x194
+#define IRQ_IVOR5     0x195
+#define IRQ_IVOR6     0x196
+#define IRQ_IVOR7     0x197
+#define IRQ_IVOR8     0x198
+#define IRQ_IVOR9     0x199
+#define IRQ_IVOR10    0x19A
+#define IRQ_IVOR11    0x19B
+#define IRQ_IVOR12    0x19C
+#define IRQ_IVOR13    0x19D
+#define IRQ_IVOR14    0x19E
+#define IRQ_IVOR15    0x19F
 
-SECTIONS
-{
-	/* .data section contains static data (e.g. strings etc) */
-	.data :
-	{
-		*(.data)
-		*(.data.*)
-		*(.rodata)
-		*(.sbss)
-	} > data
 
-	.heap :
-	AT ( ADDR(.data) + SIZEOF (.data) )
-	{
-		heap_low = .;
-		. = . + 0x80000;
-		heap_top = .;
-		. = . + (0x10000 - 0x10); /* 64k stack */
-		stack_top = .;
-	} > heap
-	/* .text contains compiled code */
-	.text :
-	{
-		*(.start)
-		*(.text)
-		*(.text.*)
-		*(.ivor)
-		*(.init)
-		*(.fini)
-	} > text
-
-	/* Put C++ constructors and destructors at the end of the text block */
-	.ctors : 
-	{
-		*(.ctors)
-		*(.ctors.*)
-	} > text
-
-	.dtors : 
-	{
-		*(.dtors)
-		*(.dtors.*)
-	} > text
-}
+int irq_init();
+int irq_install_exception_handler(void(handler(void)), U8 ivor);
