@@ -25,6 +25,9 @@
 
 #include <stdio.h>
 #include "mm/mm.h"
+#include "arch/ppc440.h"
+
+extern U32 pid;
 
 void backupRegs()
 {

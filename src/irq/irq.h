@@ -28,15 +28,6 @@
 
 #include "krntypes.h"
 
-#define IRQ_IVOR_BASE  0x0
-#define IRQ_IVOR_SIZE  0x100
-#define IRQ_IVOR_COUNT 0x10
-#define IRQ_STACK_BASE 0x1000
-#define IRQ_STACK_SIZE 0x400
-
-/* IVOR definitions */
-#define IRQ_IVOR_DTLB_ERR 13    /* Data TLB error (miss) */
-
 /* Exception handler prototypes */
 extern void _ivor_critical_int(void);
 extern void _ivor_machine_check(void);
@@ -54,26 +45,6 @@ extern void _ivor_watchdog_timer(void);
 extern void _ivor_data_tlb_error(void);
 extern void _ivor_instruction_tlb_error(void);
 extern void _ivor_debug(void);
-
-
-/* SPRs for writing IVOR */
-#define IRQ_IVOR0     0x190
-#define IRQ_IVOR1     0x191
-#define IRQ_IVOR2     0x192
-#define IRQ_IVOR3     0x193
-#define IRQ_IVOR4     0x194
-#define IRQ_IVOR5     0x195
-#define IRQ_IVOR6     0x196
-#define IRQ_IVOR7     0x197
-#define IRQ_IVOR8     0x198
-#define IRQ_IVOR9     0x199
-#define IRQ_IVOR10    0x19A
-#define IRQ_IVOR11    0x19B
-#define IRQ_IVOR12    0x19C
-#define IRQ_IVOR13    0x19D
-#define IRQ_IVOR14    0x19E
-#define IRQ_IVOR15    0x19F
-
 
 int irq_init();
 int irq_install_exception_handler(void(handler(void)), U8 ivor);

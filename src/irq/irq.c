@@ -25,6 +25,8 @@
 
 #include "irq.h"
 #include "mm/mm.h"
+#include "arch/ppc440.h"
+
 #include <stdio.h>
 #include <string.h>
 

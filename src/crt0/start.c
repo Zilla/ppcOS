@@ -26,7 +26,9 @@
 #include "mm/mm.h"
 #include "uart/uart.h"
 #include "irq/irq.h"
+
 #include "krntypes.h"
+
 #include <stdio.h>
 
 void startOS()
