@@ -43,10 +43,8 @@ int irq_init()
        This area will be right after IVOR15.
       */
 
-     mm_map_region(IRQ_IVOR_BASE, IRQ_IVOR_BASE, 0, IRQ_IVOR_SIZE * IRQ_IVOR_COUNT, TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_SX, TLB_ATTR_NONE);
-     mm_map_region(IRQ_STACK_BASE, IRQ_STACK_BASE, 0, IRQ_STACK_SIZE, TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_NONE);
-
-     printf("Installing exception handlers...");
+     mm_map_region(IRQ_IVOR_BASE, IRQ_IVOR_BASE, 0, IRQ_IVOR_SIZE * IRQ_IVOR_COUNT, TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_SX, TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
+     mm_map_region(IRQ_STACK_BASE, IRQ_STACK_BASE, 0, IRQ_STACK_SIZE, TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
 
      /* Install the handlers */
      /* TODO: Fix defines */
@@ -66,8 +64,6 @@ int irq_init()
      irq_install_exception_handler(_ivor_data_tlb_error, IRQ_IVOR_DTLB_ERR);
      irq_install_exception_handler(_ivor_instruction_tlb_error, 14);
      irq_install_exception_handler(_ivor_debug, 15);
-
-     printf("Done!\n");
 
      return 0;
 }

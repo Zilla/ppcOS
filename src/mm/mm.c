@@ -24,11 +24,15 @@
  */
 
 #include "mm.h"
-#include "malloc.h"
+#include <malloc.h>
+#include <string.h>
+#include <sys/errno.h>
+#include <math.h>
 
-/* Global declaration */
+/* Global declarations */
 
 MemoryRegion *allocRegions = NULL;
+MemoryRegion *loadedPages[MM_MAX_ACTIVE_TLBS];
 
 /* Use this until we have decided on a page replacement strategy */
 U8 currTlbIdx = 0;
@@ -42,45 +46,13 @@ U8 currTlbIdx = 0;
 
 void mm_init()
 {
-     MemoryRegion *pReg;
-
      /* Set up a TLB entry to cover .data + heap and stack for the kernel */
      /* Hard coded for now... */
-     allocRegions = malloc(sizeof(MemoryRegion));
-
-     pReg = allocRegions;
-
-     pReg->vAddr    = 0xF00000;
-     pReg->pAddr    = 0xF00000;
-     pReg->pExtAddr = 0;
-     pReg->owner    = MM_GLOBAL_REGION;
-     pReg->size     = TLB_SIZE_1MB;
-     pReg->perms    = TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_UR;
-     pReg->ts       = TLB_TS_SYSTEM;
-     pReg->attr     = TLB_ATTR_NONE;
-     pReg->tid      = MM_GLOBAL_REGION;
-
-     mm_create_tlb_entry(pReg);
-     mm_write_tlb_entry(currTlbIdx++, pReg);
+     mm_map_region(0xF00000, 0xF00000, 0, 1024*1024, TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_UR, TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
 
      /* Set up a TLB entry to cover .text for the kernel */
      /* Hard coded for now... */
-     pReg->pNext = malloc(sizeof(MemoryRegion));
-     pReg = pReg->pNext;
-
-     pReg->vAddr    = 0x1000000;
-     pReg->pAddr    = 0x1000000;
-     pReg->pExtAddr = 0;
-     pReg->owner    = MM_GLOBAL_REGION;
-     pReg->size     = TLB_SIZE_1MB;
-     pReg->perms    = TLB_PERM_SR|TLB_PERM_SX;
-     pReg->ts       = TLB_TS_SYSTEM;
-     pReg->attr     = TLB_ATTR_NONE;
-     pReg->tid      = MM_GLOBAL_REGION;
-     pReg->pNext    = NULL;
-
-     mm_create_tlb_entry(pReg);
-     mm_write_tlb_entry(currTlbIdx++, pReg);
+     mm_map_region(0x1000000, 0x1000000, 0, 1024*1024, TLB_PERM_SR|TLB_PERM_SX,  TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
 
      /*
        Clear old UTLB entries.
@@ -101,6 +73,8 @@ void mm_clear_utlb(U8 startIdx)
 {
      U8 tlbIdx = startIdx;
      U32 tlbWord0;
+
+     /* TODO: Rewrite with tlbie? */
 
      /* Loop through all 64 UTLB entries */
      while(tlbIdx < 64)
@@ -149,9 +123,13 @@ int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg)
 {
      /* Check if the TLB words have been created */
      if(!(pReg->tlbWord0 & TLB_VALID))
-	  return -1;
+     {
+	  errno = EINVAL;
+	  return EERROR;
+     }
 
      /* Write the TLB entry */
+     /* TODO: Write TID */
      asm volatile (
 	  "tlbwe %0,%3,0;"
 	  "tlbwe %1,%3,1;"
@@ -160,7 +138,9 @@ int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg)
 	  : "r"(pReg->tlbWord0), "r"(pReg->tlbWord1), "r"(pReg->tlbWord2), "r"(tlbIdx)
 	  );
 
-     return 0;
+     pReg->loaded = MM_TLB_LOADED;
+
+     return EOK;
 }
 
 /************************************************************************
@@ -176,7 +156,10 @@ int mm_create_tlb_entry(MemoryRegion *pReg)
 
      /* Combination of cache inhibit and write through is not allowed */
      if((pReg->attr & TLB_ATTR_CACHE_INHIBIT) && (pReg->attr & TLB_ATTR_WRITE_THROUGH))
-	  return -1;
+     {
+	  errno = EINVAL;
+	  return EERROR;
+     }
 
      /* Create a mask for Page Numbers */
      while(i++ < pnLen)
@@ -215,19 +198,30 @@ int mm_create_tlb_entry(MemoryRegion *pReg)
      /* Set page permission */
      pReg->tlbWord2 |= pReg->perms;
 
-     return 0;
+     return EOK;
 }
 
 /************************************************************************
  * This function creates a TLB mapping for a memory area.
  ************************************************************************/
 
-int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr)
+int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr, U8 flags)
 {
      MemoryRegion *pReg;
 
      if( size == 0 )
-	  return -1;
+     {
+	  errno = EINVAL;
+	  return EERROR;
+     }
+
+     if( allocRegions == NULL )
+     {
+	  allocRegions = malloc(sizeof(MemoryRegion));
+
+	  /* Clear the list of loaded pages */
+	  memset(loadedPages, 0, sizeof(MemoryRegion *));
+     }
 
      /* TODO: Add checks on addresses vs existing regions */
      /* TODO: Check address aligned on size */
@@ -249,6 +243,9 @@ int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr)
 	  pReg->ts       = TLB_TS_SYSTEM;
 	  pReg->attr     = attr;
 	  pReg->tid      = MM_GLOBAL_REGION;
+
+	  if( flags & MM_LOCK_TLB )
+	       mm_lock_tlb_entry(pReg);
 
 	  /* TODO: Rewrite this... */
 	  if(size >= 256*1024*1024)
@@ -307,8 +304,82 @@ int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr)
 	  }
 
 	  mm_create_tlb_entry(pReg);
-	  mm_write_tlb_entry(currTlbIdx++, pReg);
+
+	  if( flags & MM_WRITE_TLB )
+	       mm_write_tlb_entry(currTlbIdx++, pReg);
      }
 
-     return 0;
+     return EOK;
+}
+
+/************************************************************************
+ * This function locks a TLB entry, preventing it from being replaced.
+ ************************************************************************/
+int mm_lock_tlb_entry(MemoryRegion *pReg)
+{
+     if( pReg == NULL )
+     {
+	  errno = EINVAL;
+	  return EERROR;
+     }
+
+     pReg->locked = MM_TLB_LOCKED;
+
+     return EOK;
+}
+
+/************************************************************************
+ * This function unlocks a TLB entry, allowing it te be replaced.
+ ************************************************************************/
+int mm_unlock_tlb_entry(MemoryRegion *pReg)
+{
+     if( pReg == NULL )
+     {
+	  errno = EINVAL;
+	  return EERROR;
+     }
+
+     pReg->locked = MM_TLB_UNLOCKED;
+
+     return EOK;
+}
+
+/************************************************************************
+ * This function locates a memory page based on the virtual address.
+ ************************************************************************/
+MemoryRegion *mm_find_region(U32 vAddr)
+{
+     MemoryRegion *pReg = allocRegions;
+
+     while(pReg != NULL && pReg->vAddr <= vAddr)
+     {
+	  U32 size = 1024 * pow(4, pReg->size);
+	  
+	  if(pReg->vAddr + size >= vAddr )
+	       return pReg;
+
+	  pReg = pReg->pNext;
+     }
+
+     /* Did not find region */
+     return NULL;
+}
+
+/************************************************************************
+ * This function loads a TLB entry for the given address.
+ ************************************************************************/
+int mm_load_tlb_entry(U32 vAddr)
+{
+     MemoryRegion *pReg = mm_find_region(vAddr);
+
+     if( pReg == NULL )
+     {
+	  /* Could not find the page, this is a fatal error */
+	  errno = EFAULT;
+	  return EERROR;
+     }
+
+     mm_write_tlb_entry(currTlbIdx++, pReg);
+
+     return EOK;
 }

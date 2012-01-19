@@ -26,7 +26,9 @@
 #include "uart/uart.h"
 #include "krntypes.h"
 #include "mm/mm.h"
-#include "stdio.h"
+#include <stdio.h>
+#include <sys/errno.h>
+#include <sys/unistd.h>
 
 /* Globals */
 
@@ -36,55 +38,65 @@ U8 uartInitDone = 0;
 
 void uart_init()
 {
-     U8 regz;
+     U8 reg;
 
      /* Map the UART area */
-     mm_map_region(UART_VBASE, UART_PBASE, UART_ERPN, 1024, TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_GUARDED|TLB_ATTR_CACHE_INHIBIT);
+     mm_map_region(UART_VBASE, UART_PBASE, UART_ERPN, 1024, TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_GUARDED|TLB_ATTR_CACHE_INHIBIT, 0);
 
      /* Enable DLAB */
-     regz = UART_READ(UART0_LCR);
-     regz |= UART_LCR_DLAB_ENABLE;
-     UART_WRITE(UART0_LCR, regz);
+     reg = UART_READ(UART0_LCR);
+     reg |= UART_LCR_DLAB_ENABLE;
+     UART_WRITE(UART0_LCR, reg);
 
      /* Write divisor values */
      UART_WRITE(UART0_DLL, UART_DLL_9600);
      UART_WRITE(UART0_DLM, UART_DLM_9600);
 
      /* Disable DLAB */
-     regz = UART_READ(UART0_LCR);
-     regz &= UART_LCR_DLAB_MASK;
-     UART_WRITE(UART0_LCR, regz);
+     reg = UART_READ(UART0_LCR);
+     reg &= UART_LCR_DLAB_MASK;
+     UART_WRITE(UART0_LCR, reg);
 
      /* Set serial port parameters */
-     regz = UART_READ(UART0_LCR);
-     regz |= UART_LCR_8BIT_WORD|UART_LCR_PARITY_ODD;
-     UART_WRITE(UART0_LCR, regz);
+     reg = UART_READ(UART0_LCR);
+     reg |= UART_LCR_8BIT_WORD|UART_LCR_PARITY_ODD;
+     UART_WRITE(UART0_LCR, reg);
 
+     uartInitDone = 1;
      printf("UART initilized\n");
 }
 
 /* Used by sbrk(), printf(), etc */
-int write(int file, char *ptr, int len)
+int write(int file, const void *ptr, size_t len)
 {
      U32 written = 0;
-     /* TODO: Defines for stdin etc */
+     U8 *cPtr = (U8 *)ptr;
+     
+     if( uartInitDone == 0 )
+     {
+	  errno = EIO;
+	  return EERROR;
+     }
 
      /* We only support STDOUT here atm */
-     if( file != 1 )
+     if( file != STDOUT_FILENO )
 	  return len;
 
      if( len <= 0 )
-	  return -1;
+     {
+	  errno = EINVAL;
+	  return EERROR;
+     }
 
      do {
 	  UART_WAIT(UART0_LSR);
-	  UART_WRITE(UART0_THR, *ptr);
-	  if(*ptr=='\n')
+	  UART_WRITE(UART0_THR, *cPtr);
+	  if(*cPtr =='\n')
 	  {
 	       UART_WAIT(UART0_LSR);
 	       UART_WRITE(UART0_THR, '\r');
 	  }
-	  ptr++;
+	  cPtr++;
      } while(++written != len);
 
      return written;

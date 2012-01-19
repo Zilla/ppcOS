@@ -23,6 +23,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _ppcos_irq_h_
+#define _ppcos_irq_h_
+
 #include "krntypes.h"
 
 #define IRQ_IVOR_BASE  0x0
@@ -74,3 +77,5 @@ extern void _ivor_debug(void);
 
 int irq_init();
 int irq_install_exception_handler(void(handler(void)), U8 ivor);
+
+#endif /* _ppcos_irq_h_ */

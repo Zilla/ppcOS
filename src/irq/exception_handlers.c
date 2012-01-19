@@ -24,6 +24,7 @@
  */
 
 #include <stdio.h>
+#include "mm/mm.h"
 
 void backupRegs()
 {
@@ -244,14 +245,26 @@ void ivor_watchdog_timer ()
      restoreRegs();
 }
 
+/* Note: No printf() or write() here, as we can not be sure UART memory is accessible */
+
 void ivor_data_tlb_error()
 {
+     U32 dear;
+
      backupRegs();
 
-     printf("Data TLB error!!!\n");
-     while(1)
-	  ;
+     asm volatile (
+	  "mfdear %0"
+	  : "=r"(dear)
+	  );
 
+     if(mm_load_tlb_entry(dear) == EERROR)
+     {
+	  /* Call error handler here */
+	  while(1)
+	       ;
+     }
+     
      restoreRegs();
 }
 

@@ -26,6 +26,7 @@
 #ifndef _ppcos_krntypes_h_
 #define _ppcos_krntypes_h_
 
+#ifndef U8
 #define U8 unsigned char
 #define S8 char
 #define U16 unsigned short
@@ -34,9 +35,18 @@
 #define S32 int
 #define U64 unsigned long long
 #define S64 long long
+#endif /* U8 */
 
 #ifndef NULL
 #define NULL 0L
 #endif /* NULL */
+
+#ifndef EOK
+#define EOK 0
+#endif /* EOK */
+
+#ifndef EERROR
+#define EERROR -1
+#endif /* EERROR */
 
 #endif  /* _ppcos_krntypes_h_ */

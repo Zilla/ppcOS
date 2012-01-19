@@ -67,6 +67,21 @@
 /* Owner for global regions */
 #define MM_GLOBAL_REGION 0
 
+/* TLB index size on PPC440 */
+#define MM_MAX_ACTIVE_TLBS 64
+
+/* Lock defines */
+#define MM_TLB_UNLOCKED 0
+#define MM_TLB_LOCKED   1
+
+/* Loaded defines */
+#define MM_TLB_UNLOADED 0
+#define MM_TLB_LOADED   1
+
+/* Flags for mm_map_region */
+#define MM_LOCK_TLB  1 /* Prevent TLB entries from being overwritten */
+#define MM_WRITE_TLB 2 /* Commit TLB entry to UTLB immediatley */
+
 /* Data structures */
 
 typedef struct _MemoryRegion {
@@ -85,6 +100,9 @@ typedef struct _MemoryRegion {
      U32 tlbWord2;   /* Word 2 of the TLB entry */
      U8  tid;        /* Translation ID for Word 0 */
 
+     U8 locked;      /* Specifies if the TLB can be replaced or not */
+     U8 loaded;      /* Specifies if the region is currently loaded in the TLB */
+
      struct _MemoryRegion *pNext;
 } MemoryRegion;
 
@@ -94,6 +112,10 @@ int mm_create_tlb_entry(MemoryRegion *pReg);
 int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg);
 int mm_allocate_region(U32 size, U32 base);
 void mm_invalidate_stlb();
-int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr);
+int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr, U8 flags);
+int mm_lock_tlb_entry(MemoryRegion *pReg);
+int mm_unlock_tlb_entry(MemoryRegion *pReg);
+MemoryRegion *mm_find_region(U32 vAddr);
+int mm_load_tlb_entry(U32 vAddr);
 
 #endif  /* _ppcos_mm_h_ */
