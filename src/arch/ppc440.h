@@ -26,8 +26,8 @@
 #ifndef _ppcos_ppc440_h_
 #define _ppcos_ppc440__h_
 
-#define MFSPR(result, spr) asm("mfspr %0, %1" : "=r" (result) : "i" (spr));
-#define MTSPR(value,  spr) asm("mtspr %1, %0" : /* No output */: "r" (value), "i" (spr));
+#define MTSPR(value, spr)  asm volatile ("mtspr %1, %0;" : /* No output */ : "r"(value), "i"(spr));
+#define MFSPR(result, spr) asm volatile ("mfspr %0, %1" : "=r" (result) : "i" (spr));
 
 /* Mask for Machine Status Register (MSR) */
 #define MSR_WAIT_STATE_ENABLE     0x40000

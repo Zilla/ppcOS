@@ -72,130 +72,67 @@ int irq_init()
 
 int irq_install_exception_handler(void(handler(void)), U8 ivor)
 {
-     U32 ivorAddr;
+        U32 ivorAddr;
 
-     if( ivor > 15 )
-	  return -1;
+        if( ivor > 15 )
+                return -1;
 
-     memcpy((void *)(IRQ_IVOR_BASE + IRQ_IVOR_SIZE * ivor), handler, IRQ_IVOR_SIZE);
+        memcpy((void *)(IRQ_IVOR_BASE + IRQ_IVOR_SIZE * ivor), handler, IRQ_IVOR_SIZE);
+        
+        ivorAddr = (IRQ_IVOR_BASE + IRQ_IVOR_SIZE * ivor);
+        
+        /* How to do this in a good way? We can not pass the SPR number with "=r"... */
 
-     ivorAddr = (IRQ_IVOR_BASE + IRQ_IVOR_SIZE * ivor);
+        switch(IRQ_IVOR0 + ivor) {
+        case IRQ_IVOR0:
+                MTSPR(ivorAddr, IRQ_IVOR0);
+                break;
+        case IRQ_IVOR1:
+                MTSPR(ivorAddr, IRQ_IVOR1);
+                break;
+        case IRQ_IVOR2:
+                MTSPR(ivorAddr, IRQ_IVOR2);                
+                break;
+        case IRQ_IVOR3:
+                MTSPR(ivorAddr, IRQ_IVOR3);
+                break;
+        case IRQ_IVOR4:
+                MTSPR(ivorAddr, IRQ_IVOR4);
+                break;
+        case IRQ_IVOR5:
+                MTSPR(ivorAddr, IRQ_IVOR5);
+                break;
+        case IRQ_IVOR6:
+                MTSPR(ivorAddr, IRQ_IVOR6);
+                break;
+        case IRQ_IVOR7:
+                MTSPR(ivorAddr, IRQ_IVOR7);
+                break;
+        case IRQ_IVOR8:
+                MTSPR(ivorAddr, IRQ_IVOR8);
+                break;
+        case IRQ_IVOR9:
+                MTSPR(ivorAddr, IRQ_IVOR9);
+                break;
+        case IRQ_IVOR10:
+                MTSPR(ivorAddr, IRQ_IVOR10);
+                break;
+        case IRQ_IVOR11:
+                MTSPR(ivorAddr, IRQ_IVOR11);
+                break;
+        case IRQ_IVOR12:
+                MTSPR(ivorAddr, IRQ_IVOR12);
+                break;
+        case IRQ_IVOR13:
+                MTSPR(ivorAddr, IRQ_IVOR13);
+                break;
+        case IRQ_IVOR14:
+                MTSPR(ivorAddr, IRQ_IVOR14);
+                break;
+        case IRQ_IVOR15:
+                MTSPR(ivorAddr, IRQ_IVOR15);
+                break;
+        }
 
-     /* How to do this in a good way? We can not pass the SPR number with "=r"... */
-
-     switch(IRQ_IVOR0 + ivor) {
-     case IRQ_IVOR0:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR0)
-	       );
-	  break;
-     case IRQ_IVOR1:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR1)
-	       );
-	  break;
-     case IRQ_IVOR2:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR2)
-	       );
-	  break;
-     case IRQ_IVOR3:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR3)
-	       );
-	  break;
-     case IRQ_IVOR4:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR4)
-	       );
-	  break;
-     case IRQ_IVOR5:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR5)
-	       );
-	  break;
-     case IRQ_IVOR6:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR6)
-	       );
-	  break;
-     case IRQ_IVOR7:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR7)
-	       );
-	  break;
-     case IRQ_IVOR8:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR8)
-	       );
-	  break;
-     case IRQ_IVOR9:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR9)
-	       );
-	  break;
-     case IRQ_IVOR10:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR10)
-	       );
-	  break;
-     case IRQ_IVOR11:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR11)
-	       );
-	  break;
-     case IRQ_IVOR12:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR12)
-	       );
-	  break;
-     case IRQ_IVOR13:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR13)
-	       );
-	  break;
-     case IRQ_IVOR14:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR14)
-	       );
-	  break;
-     case IRQ_IVOR15:
-	  asm volatile (
-	       "mtspr %1, %0;"
-	       : /* No output */
-	       : "r"(ivorAddr), "i"(IRQ_IVOR15)
-	       );
-	  break;
-     }
-     return 0;
+        return 0;
 }
