@@ -32,6 +32,7 @@
 
 int irq_init()
 {
+     U32 msr;
      /*
        Map the memory area that will be used for the exception handlers.
        Each handler must be installed on a 16-byte aligned address.
@@ -67,6 +68,11 @@ int irq_init()
      irq_install_exception_handler(_ivor_data_tlb_error, IRQ_IVOR_DATA_TLB_ERR);
      irq_install_exception_handler(_ivor_instruction_tlb_error, IRQ_IVOR_INST_TLB_ERR);
      irq_install_exception_handler(_ivor_debug, IRQ_IVOR_DEBUG);
+
+     /* Enable critical interrupts and machine check exceptions */
+     MFMSR(msr);
+     msr |= MSR_CRTICAL_IRQ_ENABLE|MSR_MACHINE_CHECK_ENABLE;
+     MTMSR(msr);
 
      return 0;
 }

@@ -39,120 +39,184 @@
 _ivor_critical_int:
 #;	Backup r1
 	stw	r1,0x1004(0)
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
 	
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_critical_int
+	bla	ivor_critical_int
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
-	rfi
+
+	rfci
 
 	.global _ivor_machine_check
 _ivor_machine_check:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_machine_check
+	bla	ivor_machine_check
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
-	rfi
+
+	rfmci
 
 	.global _ivor_data_storage
 _ivor_data_storage:
 #;	Backup r1
 	stw	r1,0x1004(0)
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)	
 	
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_data_storage
+	bla	ivor_data_storage
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_instruction_storage
 _ivor_instruction_storage:
 #;	Backup r1
 	stw	r1,0x1004(0)
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
 	
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_instruction_storage
+	bla	ivor_instruction_storage
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_external_input
 _ivor_external_input:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_external_input
+	bla	ivor_external_input
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_alignment
 _ivor_alignment:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_alignment
+	bla	ivor_alignment
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_program
 _ivor_program:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_program
+	bla	ivor_program
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_fp_unavail
 _ivor_fp_unavail:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_fp_unavail
+	bla	ivor_fp_unavail
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_system_call
@@ -160,56 +224,88 @@ _ivor_system_call:
 #;	Backup r1
 	stw	r1,0x1004(0)
 	
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_system_call
+	bla	ivor_system_call
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_ap_unavail
 _ivor_ap_unavail:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_ap_unavail
+	bla	ivor_ap_unavail
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_decrementer
 _ivor_decrementer:
 #;	Backup r1
 	stw	r1,0x1004(0)
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
 	
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_decrementer
-
+	bla	ivor_decrementer
+	
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_fixed_interval_timer
 _ivor_fixed_interval_timer:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_fixed_interval_timer
+	bla	ivor_fixed_interval_timer
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
 	
@@ -220,57 +316,89 @@ _ivor_watchdog_timer:
 #;	Backup r1
 	stw	r1,0x1004(0)
 	
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_watchdog_timer
+	bla	ivor_watchdog_timer
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
-	rfi
+
+	rfci
 	
         .global _ivor_data_tlb_error
 _ivor_data_tlb_error:
 #;	Backup r1
 	stw	r1,0x1004(0)
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
 	
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_data_tlb_error
+	bla	ivor_data_tlb_error
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_instruction_tlb_error
 _ivor_instruction_tlb_error:
 #;	Backup r1
 	stw	r1,0x1004(0)
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
 	
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_instruction_tlb_error
+	bla	ivor_instruction_tlb_error
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
+
 	rfi
 
 	.global _ivor_debug
 _ivor_debug:
 #;	Backup r1
 	stw	r1,0x1004(0)
-	
+
+#;	Backup LR
+	mflr    r1
+	stw	r1,0x1000(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
-	ba	ivor_debug
+	bla	ivor_debug
 
+#;	Restore LR
+	lwz	r1,0x1000(0)
+	mtlr    r1
+	
 #;	Restore r1
 	lwz	r1,0x1004(0)
-	
-	rfi
+
+	rfci

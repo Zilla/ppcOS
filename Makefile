@@ -19,8 +19,8 @@ emu:
 
 make-all: kernel loader
 
-kernel: start.o start-asm.o mm.o syscall_stubs.o uart.o exception_handlers.o asm_exception_handlers.o irq.o log.o
-	$(CC) $(LDFLAGS) build/syscall_stubs.o build/start.o build/start-asm.o build/mm.o build/uart.o build/exception_handlers.o build/asm_exception_handlers.o build/irq.o build/log.o newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a -o kernel.ppc.elf
+kernel: start.o start-asm.o mm.o syscall_stubs.o uart.o exception_handlers.o asm_exception_handlers.o irq.o log.o fit.o
+	$(CC) $(LDFLAGS) build/syscall_stubs.o build/start.o build/start-asm.o build/mm.o build/uart.o build/exception_handlers.o build/asm_exception_handlers.o build/irq.o build/log.o build/fit.o newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a -o kernel.ppc.elf
 	powerpc-eabi-objcopy -O binary kernel.ppc.elf kernel.ppc.bin
 
 loader:	loader.o
@@ -56,6 +56,10 @@ irq.o:
 
 log.o:
 	$(CC) $(CFLAGS) src/log/log.c -o build/log.o
+
+fit.o:
+	$(CC) $(CFLAGS) src/timer/fit.c -o build/fit.o
+
 
 .PHONY: clean
 clean:

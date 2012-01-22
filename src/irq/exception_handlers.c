@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include "mm/mm.h"
+#include "log/log.h"
 #include "arch/ppc440.h"
 
 extern U32 pid;
@@ -32,8 +33,9 @@ extern U32 pid;
 void backupRegs()
 {
      /* Save all regs. r1 is saved before we enter here */
+     /* This mess should be re-written */
      asm volatile (
-	"stw	0,0x1000(0);"
+	"stw	0,0x1080(0);"
 	"stw	2,0x1008(0);"
 	"stw	3,0x100C(0);"
 	"stw	4,0x1010(0);"
@@ -71,7 +73,7 @@ void restoreRegs()
 {
      /* Restore all regs. r1 will be restored later */
      asm volatile (
-	"lwz	0,0x1000(0);"
+	"lwz	0,0x1080(0);"
 	"lwz	2,0x1008(0);"
 	"lwz	3,0x100C(0);"
 	"lwz	4,0x1010(0);"
@@ -230,9 +232,7 @@ void ivor_fixed_interval_timer ()
 {
      backupRegs();
 
-     printf("Fixed Interval Timer!!!\n");
-     while(1)
-	  ;
+     INFO("Fixed Interval Timer!!!");
 
      restoreRegs();
 }

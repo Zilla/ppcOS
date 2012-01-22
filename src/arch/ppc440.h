@@ -31,6 +31,8 @@
 #define TLBRE(result, idx, word)  asm volatile ("tlbre %0,%1,%2;" : "=r"(result)    : "r"(idx), "i"(word));
 #define TLBWE(value, idx, word)   asm volatile ("tlbwe %0,%1,%2;" : /* No output */ : "r"(value), "r"(idx), "i"(word));
 #define ISYNC                     asm volatile ("isync;");
+#define MTMSR(value)              asm volatile ("mtmsr %0;"       : /* No output */ : "r"(value));
+#define MFMSR(result)             asm volatile ("mfmsr %0"        : "=r" (result));
 
 
 /* Mask for Machine Status Register (MSR) */

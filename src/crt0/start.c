@@ -26,6 +26,7 @@
 #include "mm/mm.h"
 #include "uart/uart.h"
 #include "irq/irq.h"
+#include "timer/timer.h"
 
 #include "krntypes.h"
 
@@ -41,6 +42,10 @@ void startOS()
 
      /* Initilize the UART */
      uart_init();
+
+     /* Set up timer */
+     fit_init();
+     fit_enable();
 
      while(1) ;
 }
