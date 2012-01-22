@@ -49,23 +49,22 @@ int irq_init()
      mm_map_region(IRQ_STACK_BASE, IRQ_STACK_BASE, 0, IRQ_STACK_SIZE, TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
 
      /* Install the handlers */
-     /* TODO: Fix defines */
-     irq_install_exception_handler(_ivor_critical_int, 0);
-     irq_install_exception_handler(_ivor_machine_check, 1);
-     irq_install_exception_handler(_ivor_data_storage, 2);
-     irq_install_exception_handler(_ivor_instruction_storage, 3);
-     irq_install_exception_handler(_ivor_external_input, 4);
-     irq_install_exception_handler(_ivor_alignment, 5);
-     irq_install_exception_handler(_ivor_program, 6);
-     irq_install_exception_handler(_ivor_fp_unavail, 7);
-     irq_install_exception_handler(_ivor_system_call, 8);
-     irq_install_exception_handler(_ivor_ap_unavail, 9);
-     irq_install_exception_handler(_ivor_decrementer, 10);
-     irq_install_exception_handler(_ivor_fixed_interval_timer, 11);
-     irq_install_exception_handler(_ivor_watchdog_timer, 12);
-     irq_install_exception_handler(_ivor_data_tlb_error, IRQ_IVOR_DTLB_ERR);
-     irq_install_exception_handler(_ivor_instruction_tlb_error, 14);
-     irq_install_exception_handler(_ivor_debug, 15);
+     irq_install_exception_handler(_ivor_critical_int, IRQ_IVOR_CRIT_INPUT);
+     irq_install_exception_handler(_ivor_machine_check, IRQ_IVOR_MACH_CHECK);
+     irq_install_exception_handler(_ivor_data_storage, IRQ_IVOR_DATA_STORE);
+     irq_install_exception_handler(_ivor_instruction_storage, IRQ_IVOR_INST_STORE);
+     irq_install_exception_handler(_ivor_external_input, IRQ_IVOR_EXTE_INPUT);
+     irq_install_exception_handler(_ivor_alignment, IRQ_IVOR_ALIGNMENT);
+     irq_install_exception_handler(_ivor_program, IRQ_IVOR_PROGRAM);
+     irq_install_exception_handler(_ivor_fp_unavail, IRQ_IVOR_FP_UNAVAIL);
+     irq_install_exception_handler(_ivor_system_call, IRQ_IVOR_SYST_CALL);
+     irq_install_exception_handler(_ivor_ap_unavail, IRQ_IVOR_AUX_PROC_UNAVAIL);
+     irq_install_exception_handler(_ivor_decrementer, IRQ_IVOR_DECREMENTER);
+     irq_install_exception_handler(_ivor_fixed_interval_timer, IRQ_IVOR_FIXED_TIME);
+     irq_install_exception_handler(_ivor_watchdog_timer, IRQ_IVOR_WDOG_TIME);
+     irq_install_exception_handler(_ivor_data_tlb_error, IRQ_IVOR_DATA_TLB_ERR);
+     irq_install_exception_handler(_ivor_instruction_tlb_error, IRQ_IVOR_INST_TLB_ERR);
+     irq_install_exception_handler(_ivor_debug, IRQ_IVOR_DEBUG);
 
      return 0;
 }
