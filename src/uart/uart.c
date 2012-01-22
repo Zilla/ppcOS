@@ -26,6 +26,7 @@
 #include "uart/uart.h"
 #include "krntypes.h"
 #include "mm/mm.h"
+#include "log/log.h"
 #include <stdio.h>
 #include <sys/errno.h>
 #include <sys/unistd.h>
@@ -63,7 +64,7 @@ void uart_init()
      UART_WRITE(UART0_LCR, reg);
 
      uartInitDone = 1;
-     printf("UART initilized\n");
+     INFO("UART initilized");
 }
 
 /* Used by sbrk(), printf(), etc */
