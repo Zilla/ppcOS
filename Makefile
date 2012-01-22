@@ -1,10 +1,31 @@
 CC=powerpc-eabi-gcc
 CFLAGS=-c -g -Wall $(INCDIRS) -fno-builtin -msoft-float -mcpu=440
-INCDIRS=-Isrc/ -Inewlib/powerpc-eabi/include -Isrc/include
-LDFLAGS=-T src/kernel.lcf -fno-builtin -msoft-float -mcpu=440
+INCDIRS=-I$(shell pwd)/src/ -I$(shell pwd)/newlib/powerpc-eabi/include -I$(shell pwd)/src/include
+LDFLAGS=-T src/kernel.lcf -fno-builtin -msoft-float -mcpu=440 
 LOADERLFFLAGS=-T src/boot.lcf -nostdlib -fno-builtin
 DOT=dot
 IMGTYPE=-Tpng
+BUILDDIR=$(shell pwd)/build
+AR=powerpc-eabi-ar
+ARFLAGS=rcs
+OBJCOPY=powerpc-eabi-objcopy
+NEWLIBS=newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a
+
+# Build objects
+KERNEL=kernel.ppc.bin
+KRNELF=kernel.ppc.elf
+
+CRT0  = $(BUILDDIR)/crt0.o
+IRQ   = $(BUILDDIR)/irql.o
+LOG   = $(BUILDDIR)/logl.o
+MM    = $(BUILDDIR)/mml.o
+STUB  = $(BUILDDIR)/syscal_stubs.o
+TIMER = $(BUILDDIR)/timerl.o
+UART  = $(BUILDDIR)/uartl.o
+
+OBJS=$(CRT0) $(IRQ) $(LOG) $(MM) $(STUB) $(TIMER) $(UART)
+
+export CC CFLAGS INCDIRS LDFLAGS BUILDDIR AR ARFLAGS
 
 
 all: make-all
@@ -17,48 +38,41 @@ docs:
 emu:
 	./scripts/start_simics.sh
 
-make-all: kernel loader
+make-all: clean $(KERNEL) loader
 
-kernel: start.o start-asm.o mm.o syscall_stubs.o uart.o exception_handlers.o asm_exception_handlers.o irq.o log.o fit.o
-	$(CC) $(LDFLAGS) build/syscall_stubs.o build/start.o build/start-asm.o build/mm.o build/uart.o build/exception_handlers.o build/asm_exception_handlers.o build/irq.o build/log.o build/fit.o newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a -o kernel.ppc.elf
-	powerpc-eabi-objcopy -O binary kernel.ppc.elf kernel.ppc.bin
+$(KERNEL): $(OBJS)
+	$(CC) $(LDFLAGS) $(OBJS) $(NEWLIBS) -o $(KRNELF)
+	$(OBJCOPY) -O binary $(KRNELF) $(KERNEL)
 
 loader:	loader.o
 	$(CC) $(LOADERLFFLAGS) build/loader.o -o loader.ppc.elf
-	powerpc-eabi-objcopy -O binary loader.ppc.elf loader.ppc.bin
-
-start.o:
-	$(CC) $(CFLAGS) src/crt0/start.c -o build/start.o
-
-start-asm.o:
-	$(CC) $(CFLAGS) -mregnames src/crt0/start.S -o build/start-asm.o
+	$(OBJCOPY) -O binary loader.ppc.elf loader.ppc.bin
 
 loader.o:
 	$(CC) $(CFLAGS) -mregnames src/boot/loader.S -o build/loader.o
 
-mm.o:
-	$(CC) $(CFLAGS) src/mm/mm.c -o build/mm.o
+$(CRT0):
+	(cd src/crt0; make)
 
-uart.o:
-	$(CC) $(CFLAGS) src/uart/uart.c -o build/uart.o
+$(IRQ):
+	(cd src/irq; make)
 
-syscall_stubs.o:
-	$(CC) $(CFLAGS) src/stubs/syscall_stubs.c -o build/syscall_stubs.o
+$(LOG):
+	(cd src/log; make)
 
-exception_handlers.o:
-	$(CC) $(CFLAGS) src/irq/exception_handlers.c -o build/exception_handlers.o
+$(MM):
+	(cd src/mm; make)
 
-asm_exception_handlers.o:
-	$(CC) $(CFLAGS) -mregnames src/irq/exception_handlers.S -o build/asm_exception_handlers.o
+# For some reason, newlib gives link errors if we build syscall_stubs
+# the same way as the other C-files.
+$(STUB):
+	$(CC) $(CFLAGS) -o $(STUB) src/stubs/syscall_stubs.c
 
-irq.o:
-	$(CC) $(CFLAGS) src/irq/irq.c -o build/irq.o
+$(TIMER):
+	(cd src/timer; make)
 
-log.o:
-	$(CC) $(CFLAGS) src/log/log.c -o build/log.o
-
-fit.o:
-	$(CC) $(CFLAGS) src/timer/fit.c -o build/fit.o
+$(UART):
+	(cd src/uart; make)
 
 
 .PHONY: clean
