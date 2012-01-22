@@ -50,6 +50,11 @@ SECTIONS
 		*(.sbss)
 	} > data
 
+	.bss :
+	{
+		*(.bss)
+	} > data
+
 	.heap :
 	AT ( ADDR(.data) + SIZEOF (.data) )
 	{

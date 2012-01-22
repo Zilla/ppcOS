@@ -117,5 +117,6 @@ int mm_lock_tlb_entry(MemoryRegion *pReg);
 int mm_unlock_tlb_entry(MemoryRegion *pReg);
 MemoryRegion *mm_find_region(U32 vAddr);
 int mm_load_tlb_entry(U32 vAddr);
+int mm_load_tlb_entry_reg(MemoryRegion *pReg);
 
 #endif  /* _ppcos_mm_h_ */

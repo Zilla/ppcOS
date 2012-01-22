@@ -26,8 +26,12 @@
 #ifndef _ppcos_ppc440_h_
 #define _ppcos_ppc440__h_
 
-#define MTSPR(value, spr)  asm volatile ("mtspr %1, %0;" : /* No output */ : "r"(value), "i"(spr));
-#define MFSPR(result, spr) asm volatile ("mfspr %0, %1" : "=r" (result) : "i" (spr));
+#define MTSPR(value, spr)         asm volatile ("mtspr %1, %0;"   : /* No output */ : "r"(value), "i"(spr));
+#define MFSPR(result, spr)        asm volatile ("mfspr %0, %1"    : "=r" (result)   : "i" (spr));
+#define TLBRE(result, idx, word)  asm volatile ("tlbre %0,%1,%2;" : "=r"(result)    : "r"(idx), "i"(word));
+#define TLBWE(value, idx, word)   asm volatile ("tlbwe %0,%1,%2;" : /* No output */ : "r"(value), "r"(idx), "i"(word));
+#define ISYNC                     asm volatile ("isync;");
+
 
 /* Mask for Machine Status Register (MSR) */
 #define MSR_WAIT_STATE_ENABLE     0x40000
@@ -193,6 +197,7 @@
 #define FIT_INT_ENABLE             0x800000
 #define AUTO_RELOAD_ENABLE         0x400000
 
-
+/* TLB */
+#define NUM_TLB_ENTRIES  64
 
 #endif
