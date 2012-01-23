@@ -27,6 +27,7 @@
 #include "uart/uart.h"
 #include "irq/irq.h"
 #include "timer/timer.h"
+#include "proc/process.h"
 
 #include "krntypes.h"
 
@@ -34,6 +35,8 @@
 
 void startOS()
 {
+     U32 idlePid;
+
      /* Start the memory manager */
      mm_init();
 
@@ -43,9 +46,16 @@ void startOS()
      /* Initilize the UART */
      uart_init();
 
+     /* Set up process handling */
+     proc_init();
+
+     /* Start system idle process */
+     idlePid = create_process("krnIdle", krnIdle, PRIO_IDLE, STACK_MIN);
+     start_process(idlePid);
+
      /* Set up timer */
-     fit_init();
-     fit_enable();
+     /*fit_init();
+       fit_enable();*/
 
      while(1) ;
 }

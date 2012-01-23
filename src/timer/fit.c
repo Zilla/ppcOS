@@ -27,6 +27,7 @@
 #include "arch/ppc440.h"
 #include "krntypes.h"
 
+
 /* Set up the Fixed-Interval-Timer */
 
 void fit_init()
@@ -63,5 +64,3 @@ void fit_disable()
      tcr &= ~FIT_INT_ENABLE;
      MTSPR(tcr, TCR);
 }
-
-

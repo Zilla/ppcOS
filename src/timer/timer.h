@@ -26,9 +26,12 @@
 #ifndef _ppcos_timer_h_
 #define _ppcos_timer_h_
 
+#include "krntypes.h"
+
 void fit_init();
 void fit_enable();
 void fit_disable();
-
+U32  get_ticks();
+void add_tick();
 
 #endif  /* _ppcos_timer_h_ */

@@ -25,9 +25,11 @@
 
 #include "log.h"
 #include <stdio.h>
+#include <stdarg.h>
 
 char *msgTypes[] = { "INFO", "WARNING", "ERROR" };
 char *strNull = "NULL";
+char msgBuffer[MAX_LOG_STR_LEN];
 
 void write_log(char *filename, U32 lineno, const char *function, const char *message, U8 type)
 {
@@ -41,5 +43,15 @@ void write_log(char *filename, U32 lineno, const char *function, const char *mes
 	  type = LOG_TYPE_MAX;
 
      /* TODO: Add timestamps */
-     printf("%s:%u %s %s: %s\n", filename, lineno, function, msgTypes[type], message);
+     printf("%s %s:%u %s: %s\n", function, filename, lineno, msgTypes[type], message);
+}
+
+char *format_log_string(char *str, size_t size, const char *format, ...)
+{
+     va_list ap;
+     va_start(ap, format);
+     vsnprintf(str, size, format, ap);
+     va_end(ap);
+
+     return str;
 }

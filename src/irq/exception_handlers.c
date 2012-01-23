@@ -27,6 +27,7 @@
 #include "mm/mm.h"
 #include "log/log.h"
 #include "arch/ppc440.h"
+#include "timer/timer.h"
 
 extern U32 pid;
 
@@ -232,7 +233,7 @@ void ivor_fixed_interval_timer ()
 {
      backupRegs();
 
-     INFO("Fixed Interval Timer!!!");
+     /*add_tick();*/
 
      restoreRegs();
 }

@@ -27,17 +27,24 @@
 #define _ppcos_log_h_
 
 #include "krntypes.h"
+#include <stdlib.h>
 
 #define LOG_INFO     0
 #define LOG_WARNING  1
 #define LOG_ERROR    2
 #define LOG_TYPE_MAX 2
 
+#define MAX_LOG_STR_LEN 256
+
+extern char msgBuffer[];
+
 #define LOG(msg, type) write_log(__FILE__, __LINE__, __FUNCTION__, msg, type)
 #define INFO(msg) LOG(msg, LOG_INFO)
 #define WARNING(msg) LOG(msg, LOG_WARNING)
 #define ERROR(msg) LOG(msg, LOG_ERROR)
+#define STR(msg, ...) format_log_string((char *)&msgBuffer[0], MAX_LOG_STR_LEN, msg, __VA_ARGS__)
 
 void write_log(char *filename, U32 lineno, const char *function, const char *message, U8 type);
+char *format_log_string(char *str, size_t size, const char *format, ...);
 
 #endif  /* _ppcos_log_h_ */
