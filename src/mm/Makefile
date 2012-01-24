@@ -4,7 +4,9 @@ MMOBJS=$(BUILDDIR)/mm.o
 all: $(MM)
 
 $(MM): $(MMOBJS)
-	$(AR) $(ARFLAGS) $(MM) $(MMOBJS)
+	@echo "Creating archive $(notdir $@)"
+	@$(AR) $(ARFLAGS) $(MM) $(MMOBJS)
 
 $(BUILDDIR)/mm.o: mm.c
-	$(CC) $(CFLAGS) -o $@ $<
+	@echo "Compiling $<"
+	@$(CC) $(CFLAGS) -o $@ $<

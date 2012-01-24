@@ -10,6 +10,11 @@ AR=powerpc-eabi-ar
 ARFLAGS=rcs
 OBJCOPY=powerpc-eabi-objcopy
 NEWLIBS=newlib/powerpc-eabi/lib/libc.a newlib/powerpc-eabi/lib/libm.a
+DIVIDER="$(BSTART)=================================$(BEND)"
+SUBMAKE=$(MAKE) --no-print-directory
+BSTART=\033[1m
+BEND  =\033[0m
+
 
 # Build objects
 KERNEL=kernel.ppc.bin
@@ -42,48 +47,74 @@ emu:
 make-all: clean $(KERNEL) loader
 
 $(KERNEL): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) $(NEWLIBS) -o $(KRNELF)
-	$(OBJCOPY) -O binary $(KRNELF) $(KERNEL)
+	@echo $(DIVIDER)
+	@echo "Linking $(KRNELF)"
+	@$(CC) $(LDFLAGS) $(OBJS) $(NEWLIBS) -o $(KRNELF)
+	@echo "Creating binary $(KERNEL)"
+	@$(OBJCOPY) -O binary $(KRNELF) $(KERNEL)
 
 loader:	loader.o
-	$(CC) $(LOADERLFFLAGS) build/loader.o -o loader.ppc.elf
-	$(OBJCOPY) -O binary loader.ppc.elf loader.ppc.bin
+	@echo "Linking boot loader"
+	@$(CC) $(LOADERLFFLAGS) build/loader.o -o loader.ppc.elf
+	@echo "Creating binary boot loader"
+	@$(OBJCOPY) -O binary loader.ppc.elf loader.ppc.bin
 
 loader.o:
-	$(CC) $(CFLAGS) -mregnames src/boot/loader.S -o build/loader.o
+	@echo $(DIVIDER)
+	@echo "Building boot loader"
+	@$(CC) $(CFLAGS) -mregnames src/boot/loader.S -o build/loader.o
 
 $(CRT0):
-	(cd src/crt0; make)
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/crt0
 
 $(IRQ):
-	(cd src/irq; make)
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/irq
 
 $(LOG):
-	(cd src/log; make)
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/log
 
 $(MM):
-	(cd src/mm; make)
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/mm
 
 # For some reason, newlib gives link errors if we build syscall_stubs
 # the same way as the other C-files.
 $(STUB):
-	$(CC) $(CFLAGS) -o $(STUB) src/stubs/syscall_stubs.c
+	@echo $(DIVIDER)
+	@echo "Building syscall stubs"
+	@$(CC) $(CFLAGS) -o $(STUB) src/stubs/syscall_stubs.c
 
 $(TIMER):
-	(cd src/timer; make)
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/timer
 
 $(UART):
-	(cd src/uart; make)
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/uart;
 
 $(PROC):
-	(cd src/proc; make)
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/proc
 
 
 .PHONY: clean
 clean:
-	rm -f kernel.ppc.elf
-	rm -f kernel.ppc.bin
-	rm -f loader.ppc.elf
-	rm -f loader.ppc.bin
-	rm -rf build/*.o
+	@echo $(DIVIDER)
+	@echo "Removing build files"
+	@echo $(DIVIDER)
+	@rm -f kernel.ppc.elf
+	@rm -f kernel.ppc.bin
+	@rm -f loader.ppc.elf
+	@rm -f loader.ppc.bin
+	@rm -rf build/*.o
 

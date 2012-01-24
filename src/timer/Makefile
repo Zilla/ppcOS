@@ -4,10 +4,13 @@ TIMEROBJS=$(BUILDDIR)/fit.o $(BUILDDIR)/tick.o
 all: $(TIMER)
 
 $(TIMER): $(TIMEROBJS)
-	$(AR) $(ARFLAGS) $(TIMER) $(TIMEROBJS)
+	@echo "Creating archive $(notdir $@)"
+	@$(AR) $(ARFLAGS) $(TIMER) $(TIMEROBJS)
 
 $(BUILDDIR)/fit.o: fit.c
-	$(CC) $(CFLAGS) -o $@ $<
+	@echo "Compiling $<"
+	@$(CC) $(CFLAGS) -o $@ $<
 
 $(BUILDDIR)/tick.o: tick.c
-	$(CC) $(CFLAGS) -o $@ $<
+	@echo "Compiling $<"
+	@$(CC) $(CFLAGS) -o $@ $<

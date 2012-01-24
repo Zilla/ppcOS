@@ -4,7 +4,9 @@ UARTOBJS=$(BUILDDIR)/uart.o
 all: $(UART)
 
 $(UART): $(UARTOBJS)
-	$(AR) $(ARFLAGS) $(UART) $(UARTOBJS)
+	@echo "Creating archive $(notdir $@)"
+	@$(AR) $(ARFLAGS) $(UART) $(UARTOBJS)
 
 $(BUILDDIR)/uart.o: uart.c
-	$(CC) $(CFLAGS) -o $@ $<
+	@echo "Compiling $<"
+	@$(CC) $(CFLAGS) -o $@ $<

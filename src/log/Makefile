@@ -4,7 +4,9 @@ LOGOBJS=$(BUILDDIR)/log.o
 all: $(LOG)
 
 $(LOG): $(LOGOBJS)
-	$(AR) $(ARFLAGS) $(LOG) $(LOGOBJS)
+	@echo "Creating archive $(notdir $@)"
+	@$(AR) $(ARFLAGS) $(LOG) $(LOGOBJS)
 
 $(BUILDDIR)/log.o: log.c
-	$(CC) $(CFLAGS) -o $@ $<
+	@echo "Compiling $<"
+	@$(CC) $(CFLAGS) -o $@ $<
