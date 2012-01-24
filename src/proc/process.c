@@ -171,8 +171,8 @@ void stop_process(U32 pid)
      if( pProc->state == PROC_RUNNING )
      {
 	  /* No currently running process after this */
-	  procRunning = NULL;
-
+	  procRunning  = NULL;
+	  pProc->state = PROC_STOPPED;
 	  /* yeild() */
      }
      if( pProc->state == PROC_WAITING )
