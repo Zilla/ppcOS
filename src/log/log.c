@@ -24,6 +24,8 @@
  */
 
 #include "log.h"
+#include "timer/timer.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -43,7 +45,7 @@ void write_log(char *filename, U32 lineno, const char *function, const char *mes
 	  type = LOG_TYPE_MAX;
 
      /* TODO: Add timestamps */
-     printf("%s %s:%u %s: %s\n", function, filename, lineno, msgTypes[type], message);
+     printf("[%u] %s %s:%u %s: %s\n", get_ticks(), function, filename, lineno, msgTypes[type], message);
 }
 
 char *format_log_string(char *str, size_t size, const char *format, ...)

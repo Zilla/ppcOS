@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Joakim Östlund
+/* Copyright (c) 2012, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,49 +23,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mm/mm.h"
-#include "uart/uart.h"
-#include "irq/irq.h"
-#include "timer/timer.h"
-#include "proc/process.h"
-#include "proc/test_proc.h"
+#ifndef _ppcos_test_proc_h_
+#define _ppcos_test_proc_h_
 
-#include "krntypes.h"
+#include "process.h"
 
-#include <stdio.h>
+OS_PROC(test1);
+OS_PROC(test2);
+OS_PROC(test3);
 
-void startOS()
-{
-     U32 idlePid;
-
-     /* Start the memory manager */
-     mm_init();
-
-     /* Set up initial interrupt handlers */
-     irq_init();
-
-     /* Initilize the UART */
-     uart_init();
-
-     /* Set up process handling */
-     proc_init();
-
-     /* Start system idle process */
-     idlePid = create_process("krnIdle", krnIdle, PRIO_IDLE, STACK_MIN);
-     start_process(idlePid);
-
-     /* Create some test processes */
-     start_process(create_process("TestProc1", test1, 20, STACK_MIN));
-     start_process(create_process("TestProc2", test2, 20, STACK_MIN));
-     start_process(create_process("TestProc3", test3, 10, STACK_MIN));
-
-     /* Set up timer, this should be the last thing done */
-     fit_init();
-     fit_enable();
-
-     /*
-       Spin here until the first FIT triggers.
-       We will never come back here again
-     */
-     while(1) ;
-}
+#endif  /* _ppcos_test_proc_h_ */

@@ -28,6 +28,7 @@
 #include "log/log.h"
 #include "arch/ppc440.h"
 #include "timer/timer.h"
+#include "sched/scheduler.h"
 
 extern U32 pid;
 
@@ -231,9 +232,16 @@ void ivor_decrementer ()
 
 void ivor_fixed_interval_timer ()
 {
+     U32 tsr;
+
      backupRegs();
 
-     /*add_tick();*/
+     add_tick();
+     sched_invoke(true);
+
+     MFSPR(tsr, TSR);
+     tsr &= ~TSR_FIS;
+     MTSPR(tsr, TSR);
 
      restoreRegs();
 }
@@ -257,10 +265,7 @@ void ivor_data_tlb_error()
 
      backupRegs();
 
-     asm volatile (
-	  "mfdear %0"
-	  : "=r"(dear)
-	  );
+     MFDEAR(dear);
 
      if(mm_load_tlb_entry(dear) == EERROR)
      {

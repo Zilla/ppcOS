@@ -37,6 +37,10 @@
 #define S64 long long
 #endif /* U8 */
 
+#ifndef bool
+typedef enum {false, true} bool;
+#endif
+
 #ifndef NULL
 #define NULL 0L
 #endif /* NULL */

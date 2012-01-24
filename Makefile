@@ -1,5 +1,5 @@
 CC=powerpc-eabi-gcc
-CFLAGS=-c -g -Wall $(INCDIRS) -fno-builtin -msoft-float -mcpu=440
+CFLAGS=-c -g -Wall $(INCDIRS) -fno-builtin -msoft-float -mcpu=440 -fomit-frame-pointer
 INCDIRS=-I$(shell pwd)/src/ -I$(shell pwd)/newlib/powerpc-eabi/include -I$(shell pwd)/src/include
 LDFLAGS=-T src/kernel.lcf -fno-builtin -msoft-float -mcpu=440
 LOADERLFFLAGS=-T src/boot.lcf -nostdlib -fno-builtin
@@ -20,16 +20,17 @@ BEND  =\033[0m
 KERNEL=kernel.ppc.bin
 KRNELF=kernel.ppc.elf
 
-CRT0  = $(BUILDDIR)/crt0.o
-IRQ   = $(BUILDDIR)/irql.o
-LOG   = $(BUILDDIR)/logl.o
-MM    = $(BUILDDIR)/mml.o
-STUB  = $(BUILDDIR)/syscal_stubs.o
-TIMER = $(BUILDDIR)/timerl.o
-UART  = $(BUILDDIR)/uartl.o
-PROC  = $(BUILDDIR)/procl.o
+CRT0   = $(BUILDDIR)/crt0.o
+IRQ    = $(BUILDDIR)/irql.o
+LOG    = $(BUILDDIR)/logl.o
+MM     = $(BUILDDIR)/mml.o
+STUB   = $(BUILDDIR)/syscal_stubs.o
+TIMER  = $(BUILDDIR)/timerl.o
+UART   = $(BUILDDIR)/uartl.o
+PROC   = $(BUILDDIR)/procl.o
+SCHED  = $(BUILDDIR)/schedl.o
 
-OBJS=$(CRT0) $(IRQ) $(MM) $(STUB) $(TIMER) $(UART) $(LOG) $(PROC)
+OBJS=$(CRT0) $(IRQ) $(MM) $(STUB) $(TIMER) $(UART) $(LOG) $(PROC) $(SCHED)
 
 export CC CFLAGS INCDIRS LDFLAGS BUILDDIR AR ARFLAGS
 
@@ -105,6 +106,11 @@ $(PROC):
 	@echo $(DIVIDER)
 	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
 	@$(SUBMAKE) -C src/proc
+
+$(SCHED):
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/sched
 
 
 .PHONY: clean

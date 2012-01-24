@@ -25,6 +25,8 @@
 
 #include "process.h"
 #include "log/log.h"
+#include "sched/scheduler.h"
+#include "arch/ppc440.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -50,7 +52,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      Process *pProc;
 
      /* Check valid variables. Stack size must be a multiple of 4 */
-     if( procName == NULL || entryPoint == NULL || (prio > PRIO_MAX && entryPoint != krnIdle) || (stackSize % 4) != 0 )
+     if( procName == NULL || entryPoint == NULL || (prio > PRIO_MIN && entryPoint != krnIdle) || (stackSize % 4) != 0 )
      {
 	  errno = EINVAL;
 	  return EERROR;
@@ -121,7 +123,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
 	  pLink->pNext = pProc;
      }
 
-     INFO(STR("Created process %s", pProc->pcb.procName));
+     INFO(STR("Created process %s, pid: %u", pProc->pcb.procName, pProc->pid));
 
      return pProc->pid;
 }
@@ -154,7 +156,7 @@ void start_process(U32 pid)
 	  pLink->pReadyNext = pProc;
      }
 
-     INFO("Started process");
+     INFO(STR("Started process %u", pProc->pid));
 }
 
 void stop_process(U32 pid)
@@ -173,7 +175,7 @@ void stop_process(U32 pid)
 	  /* No currently running process after this */
 	  procRunning  = NULL;
 	  pProc->state = PROC_STOPPED;
-	  /* yeild() */
+	  YIELD();
      }
      if( pProc->state == PROC_WAITING )
      {
@@ -237,9 +239,15 @@ void sleep(U32 milliSeconds)
 	Negative values will be treated the same.
      */
 
+     U32 msr;
      Process *pLink = procWaitList;
 
+     MFMSR(msr);
+     WRTEEI(0);
+     ISYNC;
+
      procRunning->msSleep = (S32)milliSeconds;
+     procRunning->state = PROC_WAITING;
 
      if( procWaitList == NULL )
 	  procWaitList = procRunning;
@@ -252,7 +260,11 @@ void sleep(U32 milliSeconds)
      }
 
      procRunning = NULL;
-     /* yield() */
+
+     MTMSR(msr);
+     ISYNC;
+
+     YIELD();
 }
 
 Process *find_proc(U32 pid)

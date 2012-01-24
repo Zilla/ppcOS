@@ -30,8 +30,8 @@
 
 #define MAX_PROC_NAME_LEN    64
 
-#define PRIO_MIN             0
-#define PRIO_MAX             31
+#define PRIO_MAX             0
+#define PRIO_MIN             31
 #define NUM_PRIO             33
 
 #define PRIO_IDLE            32

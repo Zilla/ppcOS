@@ -23,9 +23,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "process.h"
+#include "test_proc.h"
+#include "log/log.h"
 
 OS_PROC(test1)
 {
-     while(1);
+     while(1)
+     {
+	  INFO("Test process 1");
+	  sleep(500);
+     }
+}
+
+OS_PROC(test2)
+{
+     while(1)
+     {
+	  INFO("Test process 2");
+	  sleep(400);
+     }
+
+}
+
+OS_PROC(test3)
+{
+     while(1)
+     {
+	  INFO("Test process 3");
+	  sleep(1000);
+     }
+
 }

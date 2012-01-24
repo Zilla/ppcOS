@@ -31,9 +31,17 @@
 #define TLBRE(result, idx, word)  asm volatile ("tlbre %0,%1,%2;" : "=r"(result)    : "r"(idx), "i"(word));
 #define TLBWE(value, idx, word)   asm volatile ("tlbwe %0,%1,%2;" : /* No output */ : "r"(value), "r"(idx), "i"(word));
 #define ISYNC                     asm volatile ("isync;");
+#define SYNC                      asm volatile ("sync;");
 #define MTMSR(value)              asm volatile ("mtmsr %0;"       : /* No output */ : "r"(value));
 #define MFMSR(result)             asm volatile ("mfmsr %0"        : "=r" (result));
+#define MFDEAR(result)            asm volatile ("mfdear %0"       : "=r" (result));
 
+#define MFSRR0(result)            asm volatile ("mfsrr0 %0"       : "=r" (result));
+#define MFSRR1(result)            asm volatile ("mfsrr1 %0"       : "=r" (result));
+#define MTSRR0(value)             asm volatile ("mtsrr0 %0"       : /* No output */ : "r"(value));
+#define MTSRR1(value)             asm volatile ("mtsrr0 %0"       : /* No output */ : "r"(value));
+
+#define WRTEEI(value)             asm volatile ("wrteei %0"       : /* No output */ : "i"(value));
 
 /* Mask for Machine Status Register (MSR) */
 #define MSR_WAIT_STATE_ENABLE     0x40000

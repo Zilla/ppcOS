@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Joakim Östlund
+/* Copyright (c) 2012, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,49 +23,42 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mm/mm.h"
-#include "uart/uart.h"
-#include "irq/irq.h"
-#include "timer/timer.h"
-#include "proc/process.h"
-#include "proc/test_proc.h"
+#ifndef _ppcos_scheduler_h_
+#define _ppcos_scheduler_h_
 
 #include "krntypes.h"
 
-#include <stdio.h>
+/*
+  YIELD macro.
+  Store r1 (stack pointer) and LR in reg backup area.
+  Copy MSR to SRR1
+  Disable EE
+  Copy PC to SRR0
+  Call yeild() to invoke scheduler
+  Restore r1 and LR
+  Call rfi
+*/
 
-void startOS()
-{
-     U32 idlePid;
+/* Needs to be improved, small window where FIT can interrupt us = VERY BAD */
 
-     /* Start the memory manager */
-     mm_init();
+/* Extremley ugly horrible hack to get PC after the macro */
+/* TODO: Rewrite... */
 
-     /* Set up initial interrupt handlers */
-     irq_init();
+#define YIELD() \
+     asm volatile("stw 1,0x1004(0); mflr 1; stw 1,0x1000(0);"); \
+     asm volatile("mfmsr 1; mtsrr1 1; wrteei 0;"); \
+     goto _savepc; \
+_yield: \
+     asm volatile("lwz 1,0x1004(0)"); \
+     yield(); \
+     asm volatile("lwz 1,0x1000(0); mtlr 1; lwz 1,0x1004(0); rfi"); \
+     goto _endYield; \
+_savepc: \
+     asm volatile("bl 0x4; mflr 1; addi 1,1,36; mtsrr0 1");	\
+     goto _yield; \
+_endYield:
 
-     /* Initilize the UART */
-     uart_init();
+void sched_invoke(bool isInterrupt);
+void yield();
 
-     /* Set up process handling */
-     proc_init();
-
-     /* Start system idle process */
-     idlePid = create_process("krnIdle", krnIdle, PRIO_IDLE, STACK_MIN);
-     start_process(idlePid);
-
-     /* Create some test processes */
-     start_process(create_process("TestProc1", test1, 20, STACK_MIN));
-     start_process(create_process("TestProc2", test2, 20, STACK_MIN));
-     start_process(create_process("TestProc3", test3, 10, STACK_MIN));
-
-     /* Set up timer, this should be the last thing done */
-     fit_init();
-     fit_enable();
-
-     /*
-       Spin here until the first FIT triggers.
-       We will never come back here again
-     */
-     while(1) ;
-}
+#endif  /* _ppcos_scheduler_h_ */

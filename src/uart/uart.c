@@ -27,6 +27,8 @@
 #include "krntypes.h"
 #include "mm/mm.h"
 #include "log/log.h"
+#include "arch/ppc440.h"
+
 #include <stdio.h>
 #include <sys/errno.h>
 #include <sys/unistd.h>
@@ -70,7 +72,7 @@ void uart_init()
 /* Used by sbrk(), printf(), etc */
 int write(int file, const void *ptr, size_t len)
 {
-     U32 written = 0;
+     U32 written = 0, msr;
      U8 *cPtr = (U8 *)ptr;
      
      if( uartInitDone == 0 )
@@ -78,6 +80,10 @@ int write(int file, const void *ptr, size_t len)
 	  errno = EIO;
 	  return EERROR;
      }
+
+     MFMSR(msr);
+     WRTEEI(0);
+     ISYNC;
 
      /* We only support STDOUT here atm */
      if( file != STDOUT_FILENO )
@@ -99,6 +105,9 @@ int write(int file, const void *ptr, size_t len)
 	  }
 	  cPtr++;
      } while(++written != len);
+
+     MTMSR(msr);
+     ISYNC;
 
      return written;
 }
