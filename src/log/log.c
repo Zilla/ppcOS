@@ -25,6 +25,7 @@
 
 #include "log.h"
 #include "timer/timer.h"
+#include "arch/ppc440.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -35,6 +36,8 @@ char msgBuffer[MAX_LOG_STR_LEN];
 
 void write_log(char *filename, U32 lineno, const char *function, const char *message, U8 type)
 {
+     U32 msr;
+
      if( !filename )
 	  filename = strNull;
      if( !function )
@@ -44,16 +47,32 @@ void write_log(char *filename, U32 lineno, const char *function, const char *mes
      if( type > LOG_TYPE_MAX )
 	  type = LOG_TYPE_MAX;
 
+     MFMSR(msr);
+     WRTEEI(0);
+     ISYNC;
+
      /* TODO: Add timestamps */
      printf("[%u] %s %s:%u %s: %s\n", get_ticks(), function, filename, lineno, msgTypes[type], message);
+
+     MTMSR(msr);
+     ISYNC;
 }
 
 char *format_log_string(char *str, size_t size, const char *format, ...)
 {
+     U32 msr;
+
+     MFMSR(msr);
+     WRTEEI(0);
+     ISYNC;
+
      va_list ap;
      va_start(ap, format);
      vsnprintf(str, size, format, ap);
      va_end(ap);
+
+     MTMSR(msr);
+     ISYNC;
 
      return str;
 }

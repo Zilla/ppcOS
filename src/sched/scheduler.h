@@ -44,7 +44,7 @@
 /* Extremley ugly horrible hack to get PC after the macro */
 /* TODO: Rewrite... */
 
-#define YIELD() \
+/*#define YIELD()						\
      asm volatile("stw 1,0x1004(0); mflr 1; stw 1,0x1000(0);"); \
      asm volatile("mfmsr 1; mtsrr1 1; wrteei 0;"); \
      goto _savepc; \
@@ -56,7 +56,9 @@ _yield: \
 _savepc: \
      asm volatile("bl 0x4; mflr 1; addi 1,1,36; mtsrr0 1");	\
      goto _yield; \
-_endYield:
+     _endYield:*/
+
+#define YIELD(msr) MFMSR(msr); msr |= MSR_WAIT_STATE_ENABLE; MTMSR(msr); ISYNC;
 
 void sched_invoke(bool isInterrupt);
 void yield();

@@ -50,7 +50,7 @@
 #define PROC_REG_CTR         35
 #define PROC_REG_PC          36
 
-typedef enum {PROC_READY, PROC_WAITING, PROC_RUNNING, PROC_STOPPED} ProcessState;
+typedef enum {PROC_READY=0, PROC_WAITING, PROC_RUNNING, PROC_STOPPED} ProcessState;
 
 typedef void(*OSPROC)(void);
 #define OS_PROC(x) void x(void)

@@ -297,6 +297,10 @@ _ivor_fixed_interval_timer:
 	mflr    r1
 	stw	r1,0x1000(0)
 
+	stw	r0,0x1080(0)
+
+	stw	r31,0x107C(0)
+
 #;	Set stack pointer
         li	r1,0x12F0
 	
@@ -308,6 +312,10 @@ _ivor_fixed_interval_timer:
 	
 #;	Restore r1
 	lwz	r1,0x1004(0)
+
+	lwz	r0,0x1080(0)
+
+	lwz	31,0x107C(0)
 	
 	rfi
 
@@ -342,6 +350,10 @@ _ivor_data_tlb_error:
 #;	Backup LR
 	mflr    r1
 	stw	r1,0x1000(0)
+
+	stw	r0,0x1080(0)
+
+	stw	r31,0x107C(0)
 	
 #;	Set stack pointer
         li	r1,0x12F0
@@ -354,6 +366,10 @@ _ivor_data_tlb_error:
 	
 #;	Restore r1
 	lwz	r1,0x1004(0)
+
+	lwz	r0,0x1080(0)
+
+	lwz	31,0x107C(0)
 
 	rfi
 

@@ -39,7 +39,7 @@
 #define MFSRR0(result)            asm volatile ("mfsrr0 %0"       : "=r" (result));
 #define MFSRR1(result)            asm volatile ("mfsrr1 %0"       : "=r" (result));
 #define MTSRR0(value)             asm volatile ("mtsrr0 %0"       : /* No output */ : "r"(value));
-#define MTSRR1(value)             asm volatile ("mtsrr0 %0"       : /* No output */ : "r"(value));
+#define MTSRR1(value)             asm volatile ("mtsrr1 %0"       : /* No output */ : "r"(value));
 
 #define WRTEEI(value)             asm volatile ("wrteei %0"       : /* No output */ : "i"(value));
 

@@ -36,7 +36,8 @@ void sched_invoke(bool isInterrupt)
      U8 currPri = PRIO_MAX, checkPri;
      Process *pNew = NULL;
      U32 msr;
-     U32 *pReg = (U32 *)0x1000; /* TODO: Add define */
+
+     /* TODO: A lot of stuff here is hardcoded. Refactor code and clean up! */
 
      SYNC;
      ISYNC;
@@ -54,7 +55,7 @@ void sched_invoke(bool isInterrupt)
      if( procWaitList != NULL && isInterrupt == true )
      {
 	  Process *pCurr, *pPrev = NULL;
-
+	  
 	  /* Check if sleeping processes should go to ready */
 	  /* TODO: We should accurately convert system ticks to ms */
 	  /* For now, hardcode 1 tick = 1 ms */
@@ -71,29 +72,33 @@ void sched_invoke(bool isInterrupt)
 		    {
 			 /* At least one other process is ready, put at end of list */
 			 Process *pLink = procReadyList[pCurr->prio];
-
+			 
 			 while(pLink->pReadyNext != NULL)
 			      pLink = pLink->pReadyNext;
 			 
 			 pLink->pReadyNext = pCurr;
 		    }
-
+		    
 		    pCurr->state = PROC_READY;
-
+		    pCurr->pReadyNext = NULL;
+		    
 		    /* Remove from wait list */
 		    if( pPrev != NULL )
 			 pPrev->pWaitNext = pCurr->pWaitNext;
 		    else
 			 procWaitList = pCurr->pWaitNext;
-	       }
 
+		    pCurr->pWaitNext = NULL;
+	       }
+	       
 	       pPrev = pCurr;
 	       pCurr = pCurr->pWaitNext;
 	  }
      }
-
-     if( procRunning == NULL )
+     
+     if( procRunning == NULL || procRunning->state != PROC_RUNNING )
      {
+	  /* Nothing is running, so take anything */
 	  checkPri = PRIO_IDLE + 1;
 	  replaceRunning = true;
      }
@@ -111,6 +116,7 @@ void sched_invoke(bool isInterrupt)
 	       pNew = procReadyList[currPri];
 	       procReadyList[currPri] = procReadyList[currPri]->pReadyNext;
 	       replaceRunning = true;
+	       pNew->pReadyNext = NULL;
 
 	       break;
 	  }
@@ -119,6 +125,17 @@ void sched_invoke(bool isInterrupt)
      if( pNew == NULL && replaceRunning == true )
      {
 	  ERROR("Failed to find a process to run!");
+	  pNew = procList;
+	  while(pNew)
+	  {
+	       INFO(STR("pNew: 0x%x, pNew->pNext: 0x%x", pNew, pNew->pNext));
+	       INFO(STR("State: %u", pNew->state));
+	       INFO(STR("msSleep: %u", pNew->msSleep));
+	       INFO(STR("PC: 0x%x", pNew->pcb.regs[PROC_REG_PC]));
+	       INFO(pNew->pcb.procName);
+	       pNew = pNew->pNext;
+	  }
+	  INFO(STR("Running: 0x%x", (U32)procRunning));
 	  while(1);
      }
 
@@ -127,13 +144,11 @@ void sched_invoke(bool isInterrupt)
 	  if( procRunning != NULL )
 	  {
 	       /* Store registers of currently running process */
-	       procRunning->pcb.regs[PROC_REG_LR]        = *(pReg++);
-	       procRunning->pcb.regs[PROC_REG_STACK_PTR] = *(pReg++);
+	       procRunning->pcb.regs[PROC_REG_LR]        = *((U32 *)0x1000);
+	       procRunning->pcb.regs[PROC_REG_STACK_PTR] = *((U32 *)0x1004);
+	       procRunning->pcb.regs[PROC_REG_GPR_START] = *((U32 *)0x1080);
 
-	       memcpy(&(procRunning->pcb.regs[PROC_REG_STACK_PTR + 1]), (void *)pReg,
-		      sizeof(U32)*((PROC_REG_GPR_END - PROC_REG_STACK_PTR) - 1));
-
-	       pReg += ((PROC_REG_GPR_END - PROC_REG_STACK_PTR) - 1);
+	       memcpy(&(procRunning->pcb.regs[2]), ((U32 *)0x1008), sizeof(U32)*30);
 
 	       /* TODO: Save CR, XER, CTR */
 
@@ -144,34 +159,33 @@ void sched_invoke(bool isInterrupt)
 	  if( procRunning != NULL && procRunning->state == PROC_RUNNING )
 	  {
 	       /*
-		 If the process is exempted while running, put it
+		 If the process is preempted while running, put it
 		 at the front of the ready queue for that priority.
 		 This will allow it to continue executing after all
 		 higer prio processes are done.
 	       */
-	       
-	       procRunning->pReadyNext = procReadyList[procRunning->prio];
+       	       procRunning->pReadyNext = procReadyList[procRunning->prio];
 	       procReadyList[procRunning->prio] = procRunning;
 
 	       procRunning->state = PROC_READY;
 	  }
 
 	  procRunning = pNew;
-	  pReg        = (U32 *)0x1000;
 
 	  /* Restore registers for the new process */
-	  *(pReg++) = procRunning->pcb.regs[PROC_REG_LR];
-	  *(pReg++) = procRunning->pcb.regs[PROC_REG_STACK_PTR];
+	  *((U32 *)0x1000) = procRunning->pcb.regs[PROC_REG_LR];
+	  *((U32 *)0x1004) = procRunning->pcb.regs[PROC_REG_STACK_PTR];
+	  *((U32 *)0x1080) = procRunning->pcb.regs[PROC_REG_GPR_START];
 
-	  memcpy((void *)pReg, &(procRunning->pcb.regs[PROC_REG_STACK_PTR + 1]),
-		      sizeof(U32)*((PROC_REG_GPR_END - PROC_REG_STACK_PTR) - 1));
+	  memcpy(((U32 *)0x1008), &(procRunning->pcb.regs[2]), sizeof(U32)*30);
 
-	  pReg += ((PROC_REG_GPR_END - PROC_REG_STACK_PTR) - 1);
 
 	  /* TODO: Restore CR, XER, CTR */
 
 	  /* Restore PC */
 	  MTSRR0(procRunning->pcb.regs[PROC_REG_PC]);
+
+	  procRunning->state = PROC_RUNNING;
      }
 
      if( isInterrupt == false)
@@ -184,7 +198,6 @@ void sched_invoke(bool isInterrupt)
      ISYNC;
 
      /* TODO: Flush cache */
-
 }
 
 /* Implemented in exception_handlers.c */

@@ -37,7 +37,7 @@ void backupRegs()
      /* Save all regs. r1 is saved before we enter here */
      /* This mess should be re-written */
      asm volatile (
-	"stw	0,0x1080(0);"
+/*	"stw	0,0x1080(0);" */
 	"stw	2,0x1008(0);"
 	"stw	3,0x100C(0);"
 	"stw	4,0x1010(0);"
@@ -67,7 +67,7 @@ void backupRegs()
 	"stw	28,0x1070(0);"
 	"stw	29,0x1074(0);"
 	"stw	30,0x1078(0);"
-	"stw	31,0x107C(0)"
+/*	"stw	31,0x107C(0)" */
 	  );
 }
 
@@ -75,7 +75,7 @@ void restoreRegs()
 {
      /* Restore all regs. r1 will be restored later */
      asm volatile (
-	"lwz	0,0x1080(0);"
+/* 	"lwz	0,0x1080(0);" */
 	"lwz	2,0x1008(0);"
 	"lwz	3,0x100C(0);"
 	"lwz	4,0x1010(0);"
@@ -105,7 +105,7 @@ void restoreRegs()
 	"lwz	28,0x1070(0);"
 	"lwz	29,0x1074(0);"
 	"lwz	30,0x1078(0);"
-	"lwz	31,0x107C(0)"
+/*	"lwz	31,0x107C(0)" */
 	  );
 }
 
@@ -232,7 +232,7 @@ void ivor_decrementer ()
 
 void ivor_fixed_interval_timer ()
 {
-     U32 tsr;
+     U32 tsr, srr1;
 
      backupRegs();
 
@@ -240,8 +240,12 @@ void ivor_fixed_interval_timer ()
      sched_invoke(true);
 
      MFSPR(tsr, TSR);
-     tsr &= ~TSR_FIS;
+     tsr |= TSR_FIS;
      MTSPR(tsr, TSR);
+
+     MFSRR1(srr1);
+     srr1 &= ~MSR_WAIT_STATE_ENABLE;
+     MTSRR1(srr1);     
 
      restoreRegs();
 }

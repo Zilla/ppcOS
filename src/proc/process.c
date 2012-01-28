@@ -34,7 +34,6 @@
 
 Process *procList        = NULL;
 Process *procWaitList    = NULL;
-/*Process *procStopList    = NULL;*/
 Process *procReadyList[NUM_PRIO];
 Process *procRunning     = NULL;
 
@@ -43,6 +42,8 @@ U32      currPid         = 0;
 void proc_init()
 {
      memset(procReadyList, 0, sizeof(Process *) * NUM_PRIO);
+
+     INFO(STR("Size: %u", sizeof(Process)));
 
      INFO("Process handling initilized");
 }
@@ -87,7 +88,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      /* Set default values for register */
      memset( pProc->pcb.regs, 0, sizeof(U32) * PROC_NUM_REGS );
      /* Set stack pointer in r1, leave room for one U32 */
-     pProc->pcb.regs[PROC_REG_STACK_PTR] = (U32)(pProc->stack - sizeof(U32));
+     pProc->pcb.regs[PROC_REG_STACK_PTR] = (U32)(pProc->stack - sizeof(U32)); /* FIXME -> this is actually -16 */
      
      /* For now we do not handle processes exiting, so set LR to CI */
      pProc->pcb.regs[PROC_REG_LR] = 0x0;
@@ -162,6 +163,7 @@ void start_process(U32 pid)
 void stop_process(U32 pid)
 {
      Process *pProc = find_proc(pid);
+     U32 msr;
 
      /* No process found */
      if( pProc == NULL )
@@ -175,7 +177,7 @@ void stop_process(U32 pid)
 	  /* No currently running process after this */
 	  procRunning  = NULL;
 	  pProc->state = PROC_STOPPED;
-	  YIELD();
+	  YIELD(msr);
      }
      if( pProc->state == PROC_WAITING )
      {
@@ -240,14 +242,16 @@ void sleep(U32 milliSeconds)
      */
 
      U32 msr;
-     Process *pLink = procWaitList;
+     Process *pLink;
 
      MFMSR(msr);
      WRTEEI(0);
      ISYNC;
 
+     pLink = procWaitList;
+
      procRunning->msSleep = (S32)milliSeconds;
-     procRunning->state = PROC_WAITING;
+     procRunning->state   = PROC_WAITING;
 
      if( procWaitList == NULL )
 	  procWaitList = procRunning;
@@ -259,12 +263,12 @@ void sleep(U32 milliSeconds)
 	  pLink->pWaitNext = procRunning;
      }
 
-     procRunning = NULL;
+     /* procRunning = NULL; */
 
      MTMSR(msr);
      ISYNC;
 
-     YIELD();
+     YIELD(msr);
 }
 
 Process *find_proc(U32 pid)

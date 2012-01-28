@@ -1,36 +1,25 @@
 
 # Random things to do, not fully expanded, not in order of importance
 
+- Clean up memory manager code, decide on page sizes
+- Clean up PCB saving
+- Clean up register handling in interrupts in general
+- Implement check on stack overflow!!
+- Implement check on heap corruption
+- Separate heap and process stacks
+- Split out heap from .data, allow heap to grow
+
 - Remove hardcoded addresses in boot loader
 - Improve image copy routine
 
-- Fix initial jump to C-code
-
 - Implement a (static) configuration system
 
-- Enable L1i
-- Enable L1d
-- Enable L2
-- Enable TLB
-- Enable BAT
-
-- Memory manager
-
-- Scheduler
-
 - Error handler
--- Exception handler
---- Vectors
---- Install function
 -- Dumps
-
-- Logging system
 
 - IPC
 
 - Serial port
--- Output
---- stdout, stderr
 -- Input
 --- stdin
 

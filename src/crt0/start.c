@@ -51,13 +51,13 @@ void startOS()
      proc_init();
 
      /* Start system idle process */
-     idlePid = create_process("krnIdle", krnIdle, PRIO_IDLE, STACK_MIN);
+     idlePid = create_process("krnIdle", krnIdle, PRIO_IDLE, 1024);
      start_process(idlePid);
 
      /* Create some test processes */
-     start_process(create_process("TestProc1", test1, 20, STACK_MIN));
-     start_process(create_process("TestProc2", test2, 20, STACK_MIN));
-     start_process(create_process("TestProc3", test3, 10, STACK_MIN));
+     start_process(create_process("TestProc1", test1, 20, 1024));
+     start_process(create_process("TestProc2", test2, 20, 1024));
+     start_process(create_process("TestProc3", test3, 10, 1024));
 
      /* Set up timer, this should be the last thing done */
      fit_init();
