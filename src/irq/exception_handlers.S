@@ -297,15 +297,41 @@ _ivor_fixed_interval_timer:
 	mflr    r1
 	stw	r1,0x1000(0)
 
+#;	Backup r0
 	stw	r0,0x1080(0)
 
+#;	Backup r31
 	stw	r31,0x107C(0)
 
+#;	Backup CR
+	mfcr    r0
+	stw	r0,0x1084(0)
+
+#;	Backup CTR
+	mfctr   r0
+	stw	r0,0x1088(0)
+
+#;	Backup XER
+	mfxer   r0
+	stw	r0,0x108C(0)
+	
 #;	Set stack pointer
         li	r1,0x12F0
 	
 	bla	ivor_fixed_interval_timer
 
+#;	Rester XER
+	lwz	r0,0x108C(0)
+	mtxer   r0
+	
+#;	Restore CTR
+	lwz	r0,0x1088(0)
+	mtctr   r0
+	
+#;	Restore CR
+	lwz	r0,0x1084(0)
+	mtcr    r0
+	
 #;	Restore LR
 	lwz	r1,0x1000(0)
 	mtlr    r1
@@ -313,8 +339,10 @@ _ivor_fixed_interval_timer:
 #;	Restore r1
 	lwz	r1,0x1004(0)
 
+#;	Restore r0	
 	lwz	r0,0x1080(0)
 
+#;	Restore r31	
 	lwz	31,0x107C(0)
 	
 	rfi

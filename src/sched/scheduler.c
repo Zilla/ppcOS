@@ -150,7 +150,10 @@ void sched_invoke(bool isInterrupt)
 
 	       memcpy(&(procRunning->pcb.regs[2]), ((U32 *)0x1008), sizeof(U32)*30);
 
-	       /* TODO: Save CR, XER, CTR */
+	       /* Save CR, XER, CTR */
+	       procRunning->pcb.regs[PROC_REG_CR]  = *((U32 *)0x1084);
+	       procRunning->pcb.regs[PROC_REG_CTR] = *((U32 *)0x1088);
+	       procRunning->pcb.regs[PROC_REG_XER] = *((U32 *)0x108C);
 
 	       /* Save PC */
 	       MFSRR0(procRunning->pcb.regs[PROC_REG_PC]);
@@ -179,8 +182,10 @@ void sched_invoke(bool isInterrupt)
 
 	  memcpy(((U32 *)0x1008), &(procRunning->pcb.regs[2]), sizeof(U32)*30);
 
-
-	  /* TODO: Restore CR, XER, CTR */
+	  /* Restore CR, XER, CTR */
+	  *((U32 *)0x1084) = procRunning->pcb.regs[PROC_REG_CR];
+	  *((U32 *)0x1088) = procRunning->pcb.regs[PROC_REG_CTR];
+	  *((U32 *)0x108C) = procRunning->pcb.regs[PROC_REG_XER];
 
 	  /* Restore PC */
 	  MTSRR0(procRunning->pcb.regs[PROC_REG_PC]);
