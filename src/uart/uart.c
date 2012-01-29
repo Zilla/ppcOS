@@ -65,6 +65,11 @@ void uart_init()
      reg |= UART_LCR_8BIT_WORD|UART_LCR_PARITY_ODD;
      UART_WRITE(UART0_LCR, reg);
 
+     /* Enable FIFO */
+     reg = UART_READ(UART0_FCR);
+     reg |= UART_FCR_ENABLE;
+     UART_WRITE(UART0_FCR, reg);
+
      uartInitDone = 1;
      INFO("UART initilized");
 }

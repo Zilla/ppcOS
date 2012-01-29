@@ -93,10 +93,22 @@
 #define UART_LSR_IDLE       0x40 /* THR is empty, and line is idle */
 #define UART_LSR_FIFO_ERR   0x80 /* Errornous data in FIFO */
 
+/* FIFO control register */
+#define UART_FCR_ENABLE     0x1 /* Enable FIFO */
+#define UART_FCR_CLEAR_RX   0x2 /* Clear receive FIFO */
+#define UART_FCR_CLEAR_TX   0x4 /* Clear transmit FIFO */
+#define UART_FCR_DMA_MODE   0x8 /* Select DMA mode 1 */
+
+/* Receive FIFO interrupt trigger level, bytes */
+#define UART_FCR_RX_INT_1   0x0
+#define UART_FCR_RX_INT_4   0x40
+#define UART_FCR_RX_INT_8   0x80
+#define UART_FCR_RX_INT_14  0x60
+
 /* Macros */
 #define UART_WRITE(reg,val) (*((volatile U8 *)(reg)) = val)
 #define UART_READ(reg) (*((volatile U8 *)(reg)))
-#define UART_WAIT(reg) while(!(UART_READ(reg) & UART_LSR_IDLE));
+#define UART_WAIT(reg) while(!(UART_READ(reg) & UART_LSR_EMPTY));
 
 void uart_init();
 
