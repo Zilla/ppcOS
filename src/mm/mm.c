@@ -24,18 +24,51 @@
  */
 
 #include "mm.h"
-#include "arch/ppc440.h"
 #include <malloc.h>
 #include <string.h>
 #include <sys/errno.h>
+#include <sys/types.h>
+
+/* Local defines */
+#define __MM_SIZE_1MB 1048576
 
 /* Global declarations */
-
 MemoryRegion *allocRegions = NULL;
-MemoryRegion *loadedPages[MM_MAX_ACTIVE_TLBS];
+MemoryRegion *loadedPages[__MM_MAX_ACTIVE_TLBS];
+
+char *heap_end = 0;
 
 /* Use this until we have decided on a page replacement strategy */
 U8 currTlbIdx = 0;
+
+/******************* FUNCTIONS *********************/
+
+/* Used by malloc() in newlib */
+
+caddr_t sbrk(int incr)
+{
+     extern char heap_low; /* Defined by the linker */
+     extern char heap_top; /* Defined by the linker */
+     char *prev_heap_end;
+	 
+     if(heap_end == 0)
+     {
+	  heap_end = &heap_low;
+     }
+
+     prev_heap_end = heap_end;
+	 
+     if (heap_end + incr > &heap_top)
+     {
+	  /* Heap and stack collision */
+	  return (caddr_t)0;
+     }
+     
+     heap_end += incr;
+     return (caddr_t) prev_heap_end;
+}
+
+/******************* INTERNAL FUNCTIONS *********************/
 
 /************************************************************************
  * This function initilizes the Memory Manager.
@@ -43,54 +76,66 @@ U8 currTlbIdx = 0;
  * regions for the kernel and the MM data area.
  ************************************************************************/
 
-void mm_init()
+void __mm_init()
 {
      /* Clear the list of loaded pages */
      memset(loadedPages, 0, sizeof(MemoryRegion *));
 
      /* Set up a TLB entry to cover .data + heap and stack for the kernel */
      /* Hard coded for now... */
-     mm_map_region(0xF00000, 0xF00000, 0, 1024*1024, TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_UR, TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
+     __mm_map_region(0xF00000, 0xF00000, 0, __MM_SIZE_1MB,
+		   TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_UR,
+		   TLB_ATTR_NONE, __MM_LOCK_TLB|__MM_WRITE_TLB, TLB_SIZE_1MB);
 
      /* Set up a TLB entry to cover .text for the kernel */
      /* Hard coded for now... */
-     mm_map_region(0x1000000, 0x1000000, 0, 1024*1024, TLB_PERM_SR|TLB_PERM_SX,  TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
+     __mm_map_region(0x1000000, 0x1000000, 0, __MM_SIZE_1MB,
+		   TLB_PERM_SR|TLB_PERM_SX,
+		   TLB_ATTR_NONE, __MM_LOCK_TLB|__MM_WRITE_TLB, TLB_SIZE_1MB);
 
      /*
        Clear old UTLB entries.
        The reason we do this is that having overlapping TLB entries
        can cause a machine check exception if the memory area is accessed.
      */
-     mm_clear_utlb(2);
+     __mm_invalidate_utlb(true);
 
      /* Force update of STLB */
-     mm_invalidate_stlb();
+     __mm_invalidate_stlb();
 }
 
 /************************************************************************
  * This function removes all entries currently in the Unified TLB
  ************************************************************************/
 
-void mm_clear_utlb(U8 startIdx)
+void __mm_invalidate_utlb(bool preserveLocked)
 {
-     U8 tlbIdx = startIdx;
-     U32 tlbWord0;
+     U8 tlbIdx = 0;
+     U32 tlbWord0, tlbWord2;
 
      /* Loop through all applicable UTLB entries */
-     while(tlbIdx < NUM_TLB_ENTRIES)
+     while(tlbIdx < __MM_MAX_ACTIVE_TLBS)
      {
-	  /* Read the TLB entry */
+	  /* Read word 2 of the TLB entry */
+	  TLBRE(tlbWord2, tlbIdx, 2);
+	  
+	  /* Check if entry is locked, and if we care */
+	  if(preserveLocked &&
+	     (tlbWord2 & (__MM_TLB_LOCKED << __MM_SH_LOCK)))
+	  {
+	       tlbIdx++;
+	       continue;
+	  }
+
+	  /* Read word 0 of the TLB entry */
 	  TLBRE(tlbWord0, tlbIdx, 0);
 
-	  /* If it is marked as valid... */
-	  if(tlbWord0 & TLB_VALID)
-	  {
-	       /* ...mark it as invalid */
-	       tlbWord0 &= TLB_VALID_MASK;
+	  /* Mark it as invalid */
+	  tlbWord0 &= ~TLB_VALID;
 
-	       /* Write the modified TLB entry */
-	       TLBWE(tlbWord0, tlbIdx, 0);
-	  }
+	  /* Write the modified TLB entry */
+	  TLBWE(tlbWord0, tlbIdx, 0);
+	  
 	  tlbIdx++;
      }
 }
@@ -100,7 +145,7 @@ void mm_clear_utlb(U8 startIdx)
  * forcing a context synchronization.
  ************************************************************************/
 
-void mm_invalidate_stlb()
+void __mm_invalidate_stlb()
 {
      ISYNC; 
 }
@@ -109,7 +154,7 @@ void mm_invalidate_stlb()
  * This function writes a TLB entry to the UTLB in the MMU.
  ************************************************************************/
 
-int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg)
+int __mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg)
 {
      U32 tid, mask;
 
@@ -132,7 +177,7 @@ int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg)
      TLBWE(pReg->tlbWord1, tlbIdx, 1);
      TLBWE(pReg->tlbWord2, tlbIdx, 2);
 
-     pReg->loaded = MM_TLB_LOADED;
+     pReg->loaded = __MM_TLB_LOADED;
      loadedPages[tlbIdx] = pReg;
 
      return EOK;
@@ -142,7 +187,7 @@ int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg)
  * This function creates the TLB words for use by the MMU.
  ************************************************************************/
 
-int mm_create_tlb_entry(MemoryRegion *pReg)
+int __mm_create_tlb_entry(MemoryRegion *pReg)
 {
      /* Field length for (E|R)PN fields */
      U8 pnLen = 22 - pReg->size * 2;
@@ -175,10 +220,10 @@ int mm_create_tlb_entry(MemoryRegion *pReg)
      pReg->tlbWord0 |= TLB_VALID;
 
      /* Set TS */
-     pReg->tlbWord0 |= (pReg->ts << 9);
+     pReg->tlbWord0 |= (pReg->ts << __MM_SH_TS);
 
      /* Set size */
-     pReg->tlbWord0 |= (pReg->size << 4);
+     pReg->tlbWord0 |= (pReg->size << __MM_SH_SIZE);
 
      /* Set RPN */
      pReg->tlbWord1  = pReg->pAddr;
@@ -188,10 +233,13 @@ int mm_create_tlb_entry(MemoryRegion *pReg)
      pReg->tlbWord1 |= pReg->pExtAddr;
 
      /* Set page attributes */
-     pReg->tlbWord2 = (pReg->attr << 7);
+     pReg->tlbWord2 = (pReg->attr <<  __MM_SH_ATTR);
 
      /* Set page permission */
      pReg->tlbWord2 |= pReg->perms;
+
+     /* Save lock status in U3 */
+     pReg->tlbWord2 |= (pReg->locked << __MM_SH_LOCK);
 
      return EOK;
 }
@@ -200,23 +248,27 @@ int mm_create_tlb_entry(MemoryRegion *pReg)
  * This function creates a TLB mapping for a memory area.
  ************************************************************************/
 
-int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr, U8 flags)
+int __mm_map_region(U32 vBase, U32 pBase, U8 erpn, S32 size, U8 perms, U8 attr, U8 flags, U8 pageSize)
 {
      MemoryRegion *pReg, *pHead, *pLink;
 
-     if( size == 0 )
+     /* For now, allow only 1K, 4K and 1M pages  */
+     if( size == 0 ||
+		     (pageSize != TLB_SIZE_1KB && pageSize != TLB_SIZE_4KB && pageSize != TLB_SIZE_1MB) )
      {
 	  errno = EINVAL;
 	  return EERROR;
      }
 
      /* TODO: Add checks on addresses vs existing regions */
-     /* TODO: Check address aligned on size */
+     /* TODO: Check address aligned on page size */
      
      pReg = NULL;
 
      while(size > 0)
      {
+	  U32 pSize = 1024 << (pageSize * 2);
+
 	  if( pReg == NULL )
 	  {
 	       pReg = malloc(sizeof(MemoryRegion));
@@ -231,79 +283,29 @@ int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr, U8
 	  pReg->vAddr    = vBase;
 	  pReg->pAddr    = pBase;
 	  pReg->pExtAddr = erpn;
-	  pReg->owner    = MM_GLOBAL_REGION;
+	  pReg->owner    = __MM_GLOBAL_REGION;
 	  pReg->perms    = perms;
 	  pReg->ts       = TLB_TS_SYSTEM;
 	  pReg->attr     = attr;
-	  pReg->tid      = MM_GLOBAL_REGION;
+	  pReg->tid      = __MM_GLOBAL_REGION;
 	  pReg->pNext    = NULL;
 
-	  if( flags & MM_LOCK_TLB )
-	       mm_lock_tlb_entry(pReg);
+	  pReg->size = pageSize;
 
-	  /* TODO: Rewrite this... */
-	  if(size >= 256*1024*1024)
-	  {
-	       pReg->size = TLB_SIZE_256MB;
-	       size -= 256*1024*1024;
-	       vBase += 256*1024*1024;
-	       pBase += 256*1024*1024;
-	  }
-	  else if(size >= 16*1024*1024)
-	  {
-	       pReg->size = TLB_SIZE_16MB;
-	       size -= 16*1024*1024;
-	       vBase += 16*1024*1024;
-	       pBase += 16*1024*1024;
-	  }
-	  else if(size >= 1024*1024)
-	  {
-	       pReg->size = TLB_SIZE_1MB;
-	       size -= 1024*1024;
-	       vBase += 1024*1024;
-	       pBase += 1024*1024;
-	  }
-	  else if(size >= 256*1024)
-	  {
-	       pReg->size = TLB_SIZE_256KB;
-	       size -= 256*1024;
-	       vBase += 256*1024;
-	       pBase += 256*1024;
-	  }
-	  else if(size >= 64*1024)
-	  {
-	       pReg->size = TLB_SIZE_64KB;
-	       size -= 64*1024;
-	       vBase += 64*1024;
-	       pBase += 64*1024;
-	  }
-	  else if(size >= 16*1024)
-	  {
-	       pReg->size = TLB_SIZE_16KB;
-	       size -= 16*1024;
-	       vBase += 16*1024;
-	       pBase += 16*1024;
-	  }
-	  else if(size >= 4*1024)
-	  {
-	       pReg->size = TLB_SIZE_4KB;
-	       size -= 4*1024;
-	       vBase += 4*1024;
-	       pBase += 4*1024;
-	  }
-	  else if(size >= 1024)
-	  {
-	       pReg->size = TLB_SIZE_1KB;
-	       size = 0;
-	  }
+	  size  -= pSize;
+	  vBase += pSize;
+	  pBase += pSize;
 
-	  mm_create_tlb_entry(pReg);
+	  if( flags & __MM_LOCK_TLB )
+	       __mm_lock_tlb_entry(pReg);
 
-	  if( flags & MM_WRITE_TLB )
-	       mm_load_tlb_entry_reg(pReg);
+	  __mm_create_tlb_entry(pReg);
+
+	  if( flags & __MM_WRITE_TLB )
+	       __mm_load_tlb_entry_reg(pReg);
      }
 
-     /* We want to link our pages into the array in such a way that they are sorted in vAddr */
+     /* We want to link our pages into the array in such a way that they are sorted on vAddr */
      if( allocRegions != NULL )
      {
 	  if( allocRegions->vAddr > pHead->vAddr )
@@ -334,7 +336,7 @@ int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr, U8
 /************************************************************************
  * This function locks a TLB entry, preventing it from being replaced.
  ************************************************************************/
-int mm_lock_tlb_entry(MemoryRegion *pReg)
+int __mm_lock_tlb_entry(MemoryRegion *pReg)
 {
      if( pReg == NULL )
      {
@@ -342,7 +344,7 @@ int mm_lock_tlb_entry(MemoryRegion *pReg)
 	  return EERROR;
      }
 
-     pReg->locked = MM_TLB_LOCKED;
+     pReg->locked = __MM_TLB_LOCKED;
 
      return EOK;
 }
@@ -350,7 +352,7 @@ int mm_lock_tlb_entry(MemoryRegion *pReg)
 /************************************************************************
  * This function unlocks a TLB entry, allowing it te be replaced.
  ************************************************************************/
-int mm_unlock_tlb_entry(MemoryRegion *pReg)
+int __mm_unlock_tlb_entry(MemoryRegion *pReg)
 {
      if( pReg == NULL )
      {
@@ -358,7 +360,7 @@ int mm_unlock_tlb_entry(MemoryRegion *pReg)
 	  return EERROR;
      }
 
-     pReg->locked = MM_TLB_UNLOCKED;
+     pReg->locked = __MM_TLB_UNLOCKED;
 
      return EOK;
 }
@@ -366,7 +368,7 @@ int mm_unlock_tlb_entry(MemoryRegion *pReg)
 /************************************************************************
  * This function locates a memory page based on the virtual address.
  ************************************************************************/
-MemoryRegion *mm_find_region(U32 vAddr)
+MemoryRegion *__mm_find_region(U32 vAddr)
 {
      MemoryRegion *pReg = allocRegions;
 
@@ -387,16 +389,16 @@ MemoryRegion *mm_find_region(U32 vAddr)
 /************************************************************************
  * This function loads a TLB entry for the given address.
  ************************************************************************/
-int mm_load_tlb_entry(U32 vAddr)
+int __mm_load_tlb_entry(U32 vAddr)
 {
-     MemoryRegion *pReg = mm_find_region(vAddr);
-     return mm_load_tlb_entry_reg(pReg);
+     MemoryRegion *pReg = __mm_find_region(vAddr);
+     return __mm_load_tlb_entry_reg(pReg);
 }
 
 /************************************************************************
  * This function loads a TLB entry for the given region.
  ************************************************************************/
-int mm_load_tlb_entry_reg(MemoryRegion *pReg)
+int __mm_load_tlb_entry_reg(MemoryRegion *pReg)
 {
      if( pReg == NULL )
      {
@@ -410,11 +412,13 @@ int mm_load_tlb_entry_reg(MemoryRegion *pReg)
      {
 	  currTlbIdx++;
 
-	  if( currTlbIdx == NUM_TLB_ENTRIES )
+	  if( currTlbIdx == __MM_MAX_ACTIVE_TLBS )
 	       currTlbIdx = 0;
-	  if( loadedPages[currTlbIdx]->locked != MM_TLB_LOCKED )
+	  if( loadedPages[currTlbIdx]->locked != __MM_TLB_LOCKED )
 	       break;
      }
 
-     return mm_write_tlb_entry(currTlbIdx++, pReg);
+     return __mm_write_tlb_entry(currTlbIdx++, pReg);
 }
+
+/******************* EXTERNAL FUNCTIONS *********************/

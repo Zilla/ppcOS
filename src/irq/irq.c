@@ -46,10 +46,12 @@ int irq_init()
        This area will be right after IVOR15.
       */
 
-     mm_map_region(IRQ_IVOR_BASE, IRQ_IVOR_BASE, 0, IRQ_IVOR_SIZE * IRQ_IVOR_COUNT,
-		   TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_SX, TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
-     mm_map_region(IRQ_STACK_BASE, IRQ_STACK_BASE, 0, IRQ_STACK_SIZE,
-		   TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_NONE, MM_LOCK_TLB|MM_WRITE_TLB);
+     __mm_map_region(IRQ_IVOR_BASE, IRQ_IVOR_BASE, 0, IRQ_IVOR_SIZE * IRQ_IVOR_COUNT,
+		     TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_SX, TLB_ATTR_NONE,
+		     __MM_LOCK_TLB|__MM_WRITE_TLB, TLB_SIZE_1KB);
+     __mm_map_region(IRQ_STACK_BASE, IRQ_STACK_BASE, 0, IRQ_STACK_SIZE,
+		     TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_NONE,
+		     __MM_LOCK_TLB|__MM_WRITE_TLB, TLB_SIZE_1KB);
 
      /* Install the handlers */
      irq_install_exception_handler(_ivor_critical_int, IRQ_IVOR_CRIT_INPUT);

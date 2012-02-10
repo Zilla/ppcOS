@@ -27,6 +27,7 @@
 #define _ppcos_mm_h_
 
 #include "krntypes.h"
+#include "arch/ppc440.h"
 
 /* Value defines */
 
@@ -58,29 +59,34 @@
 
 /* TLB valid bit */
 #define TLB_VALID      0x200
-#define TLB_VALID_MASK 0xFFFFFDFF
 
 /* Translation Address Space */
 #define TLB_TS_SYSTEM    0
 #define TLB_TS_USER      1
 
 /* Owner for global regions */
-#define MM_GLOBAL_REGION 0
+#define __MM_GLOBAL_REGION 0
 
 /* TLB index size on PPC440 */
-#define MM_MAX_ACTIVE_TLBS 64
+#define __MM_MAX_ACTIVE_TLBS NUM_TLB_ENTRIES
 
 /* Lock defines */
-#define MM_TLB_UNLOCKED 0
-#define MM_TLB_LOCKED   1
+#define __MM_TLB_UNLOCKED 0
+#define __MM_TLB_LOCKED   1
 
 /* Loaded defines */
-#define MM_TLB_UNLOADED 0
-#define MM_TLB_LOADED   1
+#define __MM_TLB_UNLOADED 0
+#define __MM_TLB_LOADED   1
 
 /* Flags for mm_map_region */
-#define MM_LOCK_TLB  1 /* Prevent TLB entries from being overwritten */
-#define MM_WRITE_TLB 2 /* Commit TLB entry to UTLB immediatley */
+#define __MM_LOCK_TLB  1 /* Prevent TLB entries from being overwritten */
+#define __MM_WRITE_TLB 2 /* Commit TLB entry to UTLB immediatley */
+
+/* Shift offsets */
+#define __MM_SH_SIZE 4
+#define __MM_SH_TS   9
+#define __MM_SH_ATTR 7
+#define __MM_SH_LOCK 12
 
 /* Data structures */
 
@@ -106,17 +112,23 @@ typedef struct _MemoryRegion {
      struct _MemoryRegion *pNext;
 } MemoryRegion;
 
-void mm_init(); /* Initialize the memory manager */
-void mm_clear_utlb(U8 startIdx);
-int mm_create_tlb_entry(MemoryRegion *pReg);
-int mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg);
+/* POSIX function used by malloc() in newlib */
+
+/* Kernel internal interface */
+
+void          __mm_init(); 
+void          __mm_invalidate_utlb(bool preserveLocked);
+int           __mm_create_tlb_entry(MemoryRegion *pReg);
+int           __mm_write_tlb_entry(U8 tlbIdx, MemoryRegion *pReg);
+void          __mm_invalidate_stlb();
+int           __mm_map_region(U32 vBase, U32 pBase, U8 erpn, S32 size, U8 perms, U8 attr, U8 flags, U8 pageSize);
+int           __mm_lock_tlb_entry(MemoryRegion *pReg);
+int           __mm_unlock_tlb_entry(MemoryRegion *pReg);
+MemoryRegion *__mm_find_region(U32 vAddr);
+int           __mm_load_tlb_entry(U32 vAddr);
+int           __mm_load_tlb_entry_reg(MemoryRegion *pReg);
+
+/* External interface */
 int mm_allocate_region(U32 size, U32 base);
-void mm_invalidate_stlb();
-int mm_map_region(U32 vBase, U32 pBase, U8 erpn, U32 size, U8 perms, U8 attr, U8 flags);
-int mm_lock_tlb_entry(MemoryRegion *pReg);
-int mm_unlock_tlb_entry(MemoryRegion *pReg);
-MemoryRegion *mm_find_region(U32 vAddr);
-int mm_load_tlb_entry(U32 vAddr);
-int mm_load_tlb_entry_reg(MemoryRegion *pReg);
 
 #endif  /* _ppcos_mm_h_ */

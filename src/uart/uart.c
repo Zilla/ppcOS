@@ -44,7 +44,8 @@ void uart_init()
      U8 reg;
 
      /* Map the UART area */
-     mm_map_region(UART_VBASE, UART_PBASE, UART_ERPN, 1024, TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_GUARDED|TLB_ATTR_CACHE_INHIBIT, 0);
+     __mm_map_region(UART_VBASE, UART_PBASE, UART_ERPN, 1024,
+		     TLB_PERM_SR|TLB_PERM_SW, TLB_ATTR_GUARDED|TLB_ATTR_CACHE_INHIBIT, 0, TLB_SIZE_1KB);
 
      /* Enable DLAB */
      reg = UART_READ(UART0_LCR);

@@ -39,7 +39,7 @@ void startOS()
      U32 idlePid;
 
      /* Start the memory manager */
-     mm_init();
+     __mm_init();
 
      /* Set up initial interrupt handlers */
      irq_init();

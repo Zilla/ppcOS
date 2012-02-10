@@ -271,7 +271,7 @@ void ivor_data_tlb_error()
 
      MFDEAR(dear);
 
-     if(mm_load_tlb_entry(dear) == EERROR)
+     if(__mm_load_tlb_entry(dear) == EERROR)
      {
 	  /* Call error handler here */
 	  while(1)
