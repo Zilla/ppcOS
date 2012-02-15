@@ -29,6 +29,7 @@
 #include "timer/timer.h"
 #include "proc/process.h"
 #include "proc/test_proc.h"
+#include "vfs/vfs.h"
 
 #include "krntypes.h"
 
@@ -48,10 +49,10 @@ void startOS()
      uart_init();
 
      /* Set up process handling */
-     proc_init();
+     __proc_init();
 
      /* Start system idle process */
-     idlePid = create_process("krnIdle", krnIdle, PRIO_IDLE, 1024);
+     idlePid = create_process("krnIdle", krnIdle, __PRIO_IDLE, 1024);
      start_process(idlePid);
 
      /* Create some test processes */
@@ -62,6 +63,9 @@ void startOS()
      /* Set up timer, this should be the last thing done */
      fit_init();
      fit_enable();
+
+     /* Temp call */
+     open("/", O_RDONLY);
 
      /*
        Spin here until the first FIT triggers.

@@ -32,25 +32,25 @@
 #include <stdlib.h>
 #include <sys/errno.h>
 
-Process *procList        = NULL;
-Process *procWaitList    = NULL;
-Process *procReadyList[NUM_PRIO];
-Process *procRunning     = NULL;
+__Process *__procList        = NULL;
+__Process *__procWaitList    = NULL;
+__Process *__procReadyList[NUM_PRIO];
+__Process *__procRunning     = NULL;
 
-U32      currPid         = 0;
+U32      currPid             = 0;
 
-void proc_init()
+void __proc_init()
 {
-     memset(procReadyList, 0, sizeof(Process *) * NUM_PRIO);
+     memset(__procReadyList, 0, sizeof(__Process *) * NUM_PRIO);
 
-     INFO(STR("Size: %u", sizeof(Process)));
+     INFO(STR("Size: %u", sizeof(__Process)));
 
      INFO("Process handling initilized");
 }
 
 U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
 {
-     Process *pProc;
+     __Process *pProc;
 
      /* Check valid variables. Stack size must be a multiple of 4 */
      if( procName == NULL || entryPoint == NULL || (prio > PRIO_MIN && entryPoint != krnIdle) || (stackSize % 4) != 0 )
@@ -62,7 +62,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
 	  stackSize = STACK_MIN;
 
      /* Allocate a new process structure */
-     pProc = (Process *)malloc(sizeof(Process));
+     pProc = (__Process *)malloc(sizeof(__Process));
      if( pProc == NULL )
      {
 	  ERROR("Failed to allocate process struct");
@@ -81,21 +81,21 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      pProc->stack += stackSize/sizeof(U32);
 
      /* Copy process name */
-     strncpy( pProc->pcb.procName, procName, MAX_PROC_NAME_LEN );
+     strncpy( pProc->pcb.procName, procName, __MAX_PROC_NAME_LEN );
      /* There is no guarantee that strncpy adds string terminator if len = maxLen */
-     pProc->pcb.procName[MAX_PROC_NAME_LEN] = '\0';
+     pProc->pcb.procName[__MAX_PROC_NAME_LEN] = '\0';
 
      /* Set default values for register */
-     memset( pProc->pcb.regs, 0, sizeof(U32) * PROC_NUM_REGS );
+     memset( pProc->pcb.regs, 0, sizeof(U32) * __PROC_NUM_REGS );
      /* Set stack pointer in r1, leave room for one U32 */
-     pProc->pcb.regs[PROC_REG_STACK_PTR] = (U32)(pProc->stack - sizeof(U32)); /* FIXME -> this is actually -16 */
+     pProc->pcb.regs[__PROC_REG_STACK_PTR] = (U32)(pProc->stack - sizeof(U32)); /* FIXME -> this is actually -16 */
      
      /* For now we do not handle processes exiting, so set LR to CI */
-     pProc->pcb.regs[PROC_REG_LR] = 0x0;
+     pProc->pcb.regs[__PROC_REG_LR] = 0x0;
 
      /* Set PC to start of process */
-     pProc->pcb.regs[PROC_REG_PC] = (U32)entryPoint;
-     pProc->entryPoint            =      entryPoint;
+     pProc->pcb.regs[__PROC_REG_PC] = (U32)entryPoint;
+     pProc->entryPoint              =      entryPoint;
 
      /* Save prio */
      pProc->prio  = prio;
@@ -104,7 +104,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      pProc->pid   = ++currPid;
 
      /* Set initial process state */
-     pProc->state = PROC_STOPPED;
+     pProc->state = __PROC_STOPPED;
 
      /* Set link pointers */
      pProc->pNext      = NULL;
@@ -112,11 +112,11 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      pProc->pReadyNext = NULL;
 
      /* Add process to global process list */
-     if( procList == NULL )
-	  procList = pProc;
+     if( __procList == NULL )
+	  __procList = pProc;
      else
      {
-	  Process *pLink = procList;
+	  __Process *pLink = __procList;
 
 	  while( pLink->pNext != NULL )
 	       pLink = pLink->pNext;
@@ -131,25 +131,25 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
 
 void start_process(U32 pid)
 {
-     Process *pProc = find_proc(pid);
+     __Process *pProc = __proc_find(pid);
 
      /* No process found */
      if( pProc == NULL )
 	  return;
 
      /* Nothing to do */
-     if( pProc->state != PROC_STOPPED )
+     if( pProc->state != __PROC_STOPPED )
 	  return;
 
      /* Start process */
-     pProc->state = PROC_READY;
+     pProc->state = __PROC_READY;
 
      /* Link process into ready queue for the priority level */
-     if( procReadyList[pProc->prio] == NULL )
-	  procReadyList[pProc->prio] = pProc;
+     if( __procReadyList[pProc->prio] == NULL )
+	  __procReadyList[pProc->prio] = pProc;
      else
      {
-	  Process *pLink = procReadyList[pProc->prio];
+	  __Process *pLink = __procReadyList[pProc->prio];
 
 	  while( pLink->pReadyNext != NULL )
 	       pLink = pLink->pReadyNext;
@@ -162,7 +162,7 @@ void start_process(U32 pid)
 
 void stop_process(U32 pid)
 {
-     Process *pProc = find_proc(pid);
+     __Process *pProc = __proc_find(pid);
      U32 msr;
 
      /* No process found */
@@ -170,24 +170,24 @@ void stop_process(U32 pid)
 	  return;
 
      /* Nothing to do */
-     if( pProc->state == PROC_STOPPED )
+     if( pProc->state == __PROC_STOPPED )
 	  return;
-     if( pProc->state == PROC_RUNNING )
+     if( pProc->state == __PROC_RUNNING )
      {
 	  /* No currently running process after this */
-	  procRunning  = NULL;
-	  pProc->state = PROC_STOPPED;
+	  __procRunning  = NULL;
+	  pProc->state = __PROC_STOPPED;
 	  YIELD(msr);
      }
-     if( pProc->state == PROC_WAITING )
+     if( pProc->state == __PROC_WAITING )
      {
-	  Process *pLink = procWaitList;
+	  __Process *pLink = __procWaitList;
 
-	  pProc->state = PROC_STOPPED;
+	  pProc->state = __PROC_STOPPED;
 
-	  if( pProc == procWaitList )
+	  if( pProc == __procWaitList )
 	  {
-	       procWaitList = pProc->pNext;
+	       __procWaitList = pProc->pNext;
 	       return;
 	  }
 
@@ -201,15 +201,15 @@ void stop_process(U32 pid)
 	       pLink = pLink->pWaitNext;
 	  }
      }
-     if( pProc->state == PROC_READY )
+     if( pProc->state == __PROC_READY )
      {
-	  Process *pLink = procReadyList[pProc->prio];
+	  __Process *pLink = __procReadyList[pProc->prio];
 
-	  pProc->state = PROC_STOPPED;
+	  pProc->state = __PROC_STOPPED;
 
-	  if( pProc == procReadyList[pProc->prio] )
+	  if( pProc == __procReadyList[pProc->prio] )
 	  {
-	       procReadyList[pProc->prio] = pProc->pNext;
+	       __procReadyList[pProc->prio] = pProc->pNext;
 	       return;
 	  }
 
@@ -227,8 +227,8 @@ void stop_process(U32 pid)
 
 U32 current_process()
 {
-     if( procRunning != NULL )
-	  return procRunning->pid;
+     if( __procRunning != NULL )
+	  return __procRunning->pid;
 
      return 0;
 }
@@ -242,25 +242,25 @@ void sleep(U32 milliSeconds)
      */
 
      U32 msr;
-     Process *pLink;
+     __Process *pLink;
 
      MFMSR(msr);
      WRTEEI(0);
      ISYNC;
 
-     pLink = procWaitList;
+     pLink = __procWaitList;
 
-     procRunning->msSleep = (S32)milliSeconds;
-     procRunning->state   = PROC_WAITING;
+     __procRunning->msSleep = (S32)milliSeconds;
+     __procRunning->state   = __PROC_WAITING;
 
-     if( procWaitList == NULL )
-	  procWaitList = procRunning;
+     if( __procWaitList == NULL )
+	  __procWaitList = __procRunning;
      else
      {
 	  while( pLink->pWaitNext != NULL )
 	       pLink = pLink->pWaitNext;
 
-	  pLink->pWaitNext = procRunning;
+	  pLink->pWaitNext = __procRunning;
      }
 
      /* procRunning = NULL; */
@@ -271,9 +271,9 @@ void sleep(U32 milliSeconds)
      YIELD(msr);
 }
 
-Process *find_proc(U32 pid)
+__Process *__proc_find(U32 pid)
 {
-     Process *pProc = procList;
+     __Process *pProc = __procList;
      
      while( pProc != NULL )
      {

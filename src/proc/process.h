@@ -28,29 +28,29 @@
 
 #include "krntypes.h"
 
-#define MAX_PROC_NAME_LEN    64
+#define __MAX_PROC_NAME_LEN  64
 
 #define PRIO_MAX             0
 #define PRIO_MIN             31
 #define NUM_PRIO             33
 
-#define PRIO_IDLE            32
+#define __PRIO_IDLE          32
 
-#define PROC_NUM_REGS        40
+#define __PROC_NUM_REGS      40
 
 #define STACK_MIN            128
 
 /* Registers */
-#define PROC_REG_GPR_START   0
-#define PROC_REG_STACK_PTR   1
-#define PROC_REG_GPR_END     32
-#define PROC_REG_LR          32
-#define PROC_REG_CR          33
-#define PROC_REG_XER         34
-#define PROC_REG_CTR         35
-#define PROC_REG_PC          36
+#define __PROC_REG_GPR_START   0
+#define __PROC_REG_STACK_PTR   1
+#define __PROC_REG_GPR_END     32
+#define __PROC_REG_LR          32
+#define __PROC_REG_CR          33
+#define __PROC_REG_XER         34
+#define __PROC_REG_CTR         35
+#define __PROC_REG_PC          36
 
-typedef enum {PROC_READY=0, PROC_WAITING, PROC_RUNNING, PROC_STOPPED} ProcessState;
+typedef enum {__PROC_READY=0, __PROC_WAITING, __PROC_RUNNING, __PROC_STOPPED} __ProcessState;
 
 typedef void(*OSPROC)(void);
 #define OS_PROC(x) void x(void)
@@ -58,17 +58,17 @@ typedef void(*OSPROC)(void);
 /* Process Control Block */
 typedef struct _PCB {
      /* Administrative data */
-     char  procName[MAX_PROC_NAME_LEN + 1];
+     char  procName[__MAX_PROC_NAME_LEN + 1];
      
      /* Execution data */
-     U32   regs[PROC_NUM_REGS];
-} PCB;
+     U32   regs[__PROC_NUM_REGS];
+} __PCB;
 
 /* Process */
 typedef struct _Process {
-     PCB              pcb;
+     __PCB            pcb;
      U32             *stack;
-     ProcessState     state;
+     __ProcessState   state;
      S32              msSleep;
      OSPROC           entryPoint;
 
@@ -78,21 +78,23 @@ typedef struct _Process {
      struct _Process *pNext;
      struct _Process *pWaitNext;
      struct _Process *pReadyNext;
-} Process;
+} __Process;
 
-extern Process *procList;
-extern Process *procWaitList;
-/*extern Process *procStopList;*/
-extern Process *procReadyList[];
-extern Process *procRunning;
+extern __Process *__procList;
+extern __Process *__procWaitList;
+extern __Process *__procReadyList[];
+extern __Process *__procRunning;
 
-void proc_init();
+/* Internal */
+void __proc_init();
+__Process *__proc_find(U32 pid);
+
+/* External */
 U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize);
 void start_process(U32 pid);
 void stop_process(U32 pid);
 U32 current_process();
 void sleep(U32 milliSeconds);
-Process *find_proc(U32 pid);
 OS_PROC(krnIdle);
 
 #endif  /* _ppcos_process_h_ */

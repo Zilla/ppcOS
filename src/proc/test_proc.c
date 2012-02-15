@@ -28,18 +28,34 @@
 
 OS_PROC(test1)
 {
+     U32 num = 0;
+
+     INFO("Test process 1 starting");
+
      while(1)
      {
-	  INFO("Test process 1");
+	  num++;
+
+	  if( (num % 1000) == 0 )
+	       INFO(STR("Test process 1: loop %u", num));
+
 	  sleep(500);
      }
 }
 
 OS_PROC(test2)
 {
+     U32 num = 0;
+
+     INFO("Test process 2 starting");
+
      while(1)
      {
-	  INFO("Test process 2");
+	  num++;
+
+	  if( (num % 1000) == 0 )
+	       INFO(STR("Test process 2: loop %u", num));
+
 	  sleep(400);
      }
 
@@ -47,9 +63,17 @@ OS_PROC(test2)
 
 OS_PROC(test3)
 {
+     U32 num = 0;
+
+     INFO("Test process 3 starting");
+
      while(1)
      {
-	  INFO("Test process 3");
+	  num++;
+
+	  if( (num % 1000) == 0 )
+	       INFO(STR("Test process 3: loop %u", num));
+
 	  sleep(1000);
      }
 
