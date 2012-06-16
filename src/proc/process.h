@@ -27,6 +27,7 @@
 #define _ppcos_process_h_
 
 #include "krntypes.h"
+#include "vfs/vfs.h"
 
 #define __MAX_PROC_NAME_LEN  64
 
@@ -74,6 +75,8 @@ typedef struct _Process {
 
      U32              pid;
      U8               prio;
+
+     __FileDesc       fd_list[__VFS_MAX_FD];
 
      struct _Process *pNext;
      struct _Process *pWaitNext;

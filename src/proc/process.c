@@ -111,6 +111,14 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      pProc->pWaitNext  = NULL;
      pProc->pReadyNext = NULL;
 
+     /* Set up default file descriptors (STDIN, STDOUT, STDERR) */
+     __vfs_init_proc(pProc->pid);
+     
+     /* Open descriptors, ignore return values (allow failure) */
+     open("/dev/tty", O_RDONLY); /* STDIN */
+     open("/dev/tty", O_WRONLY); /* STDOUT */
+     open("/dev/tty", O_WRONLY); /* STDERR */
+
      /* Add process to global process list */
      if( __procList == NULL )
 	  __procList = pProc;

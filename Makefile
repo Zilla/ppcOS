@@ -1,8 +1,8 @@
 CC=powerpc-eabi-gcc
-CFLAGS=-c -g -Wall $(INCDIRS) -fno-builtin -msoft-float -mcpu=440 -fomit-frame-pointer
-INCDIRS=-I$(shell pwd)/src/ -I$(shell pwd)/newlib/powerpc-eabi/include -I$(shell pwd)/src/include
+CFLAGS=-c -g -Wall -Werror $(INCDIRS) -fno-builtin -msoft-float -mcpu=440 -fomit-frame-pointer
+INCDIRS=-I$(shell pwd)/src/ -I$(shell pwd)/src/include -I$(shell pwd)/newlib/powerpc-eabi/include
 LDFLAGS=-T src/kernel.lcf -fno-builtin -msoft-float -mcpu=440
-LOADERLFFLAGS=-T src/boot.lcf -nostdlib -fno-builtin
+LOADERLFFLAGS=-T src/boot.lcf -nostdlib -fno-builtin -Wall -Werror
 DOT=dot
 IMGTYPE=-Tpng
 BUILDDIR=$(shell pwd)/build
@@ -29,11 +29,11 @@ TIMER  = $(BUILDDIR)/timerl.o
 UART   = $(BUILDDIR)/uartl.o
 PROC   = $(BUILDDIR)/procl.o
 SCHED  = $(BUILDDIR)/schedl.o
+VFS    = $(BUILDDIR)/vfsl.o
 
-OBJS=$(CRT0) $(IRQ) $(MM) $(STUB) $(TIMER) $(UART) $(LOG) $(PROC) $(SCHED)
+OBJS=$(CRT0) $(IRQ) $(MM) $(STUB) $(TIMER) $(UART) $(LOG) $(PROC) $(SCHED) $(VFS)
 
 export CC CFLAGS INCDIRS LDFLAGS BUILDDIR AR ARFLAGS
-
 
 all: make-all
 
@@ -50,7 +50,7 @@ make-all: clean $(KERNEL) loader
 $(KERNEL): $(OBJS)
 	@echo $(DIVIDER)
 	@echo "Linking $(KRNELF)"
-	@$(CC) $(LDFLAGS) $(OBJS) $(NEWLIBS) -o $(KRNELF)
+	@$(CC) $(LDFLAGS) $(NEWLIBS) $(OBJS) -o $(KRNELF)
 	@echo "Creating binary $(KERNEL)"
 	@$(OBJCOPY) -O binary $(KRNELF) $(KERNEL)
 
@@ -112,6 +112,10 @@ $(SCHED):
 	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
 	@$(SUBMAKE) -C src/sched
 
+$(VFS):
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/vfs
 
 .PHONY: clean
 clean:

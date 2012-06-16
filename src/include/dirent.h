@@ -1,4 +1,4 @@
-/* Copyright (c) 2011, Joakim Östlund
+/* Copyright (c) 2012, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,56 +23,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mm/mm.h"
-#include "uart/uart.h"
-#include "irq/irq.h"
-#include "timer/timer.h"
-#include "proc/process.h"
-#include "proc/test_proc.h"
-#include "vfs/vfs.h"
+#ifndef _ppcos_dirent_h_
+#define _ppcos_dirent_h_
 
 #include "krntypes.h"
 
-#include <stdio.h>
+/* File types */
+#define FT_REG  1
+#define FT_DIR  2
+#define FT_CHR  3
+#define FT_BLK  4
+#define FT_LNK  5
 
-void startOS()
-{
-     U32 idlePid;
+typedef int dir_ptr_t;
 
-     /* Start the memory manager */
-     __mm_init();
+struct dirent {
+     unsigned char  d_type;
+     char           d_name[256];
+};
 
-     /* Set up initial interrupt handlers */
-     irq_init();
-
-     /* Initilize the UART */
-     uart_init();
-
-     /* Set up process handling */
-     __proc_init();
-
-     /* Initialize Virtual File System handler */
-     __vfs_init();
-
-     /* Start system idle process */
-     idlePid = create_process("krnIdle", krnIdle, __PRIO_IDLE, 1024);
-     start_process(idlePid);
-
-     /* Create some test processes */
-     start_process(create_process("TestProc1", test1, 20, 1024));
-     start_process(create_process("TestProc2", test2, 20, 1024));
-     start_process(create_process("TestProc3", test3, 10, 1024));
-
-     /* Set up timer, this should be the last thing done */
-     fit_init();
-     fit_enable();
-
-     /* Temp call */
-     open("/", O_RDONLY);
-
-     /*
-       Spin here until the first FIT triggers.
-       We will never come back here again
-     */
-     while(1) ;
-}
+#endif  /* _ppcos_dirent_h_ */
