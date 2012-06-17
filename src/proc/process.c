@@ -301,3 +301,29 @@ OS_PROC(krnIdle)
 
      while(1);
 }
+
+/* POSIX function */
+
+void _exit()
+{
+     /* TODO: Add a kill_process() function */
+     stop_process( current_process() );
+}
+
+int kill(int pid, int sig)
+{
+     if( __proc_find( pid ) == NULL )
+     {
+	  errno = EINVAL;
+	  return -1;
+     }
+
+     stop_process( pid );
+     return 0;
+}
+
+int getpid(void)
+{
+     return current_process();
+}
+

@@ -24,14 +24,13 @@ CRT0   = $(BUILDDIR)/crt0.o
 IRQ    = $(BUILDDIR)/irql.o
 LOG    = $(BUILDDIR)/logl.o
 MM     = $(BUILDDIR)/mml.o
-STUB   = $(BUILDDIR)/syscal_stubs.o
 TIMER  = $(BUILDDIR)/timerl.o
 UART   = $(BUILDDIR)/uartl.o
 PROC   = $(BUILDDIR)/procl.o
 SCHED  = $(BUILDDIR)/schedl.o
 VFS    = $(BUILDDIR)/vfsl.o
 
-OBJS=$(CRT0) $(IRQ) $(MM) $(STUB) $(TIMER) $(UART) $(LOG) $(PROC) $(SCHED) $(VFS)
+OBJS=$(CRT0) $(IRQ) $(MM) $(TIMER) $(UART) $(LOG) $(PROC) $(SCHED) $(VFS)
 
 export CC CFLAGS INCDIRS LDFLAGS BUILDDIR AR ARFLAGS
 
@@ -84,13 +83,6 @@ $(MM):
 	@echo $(DIVIDER)
 	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
 	@$(SUBMAKE) -C src/mm
-
-# For some reason, newlib gives link errors if we build syscall_stubs
-# the same way as the other C-files.
-$(STUB):
-	@echo $(DIVIDER)
-	@echo "Building syscall stubs"
-	@$(CC) $(CFLAGS) -o $(STUB) src/stubs/syscall_stubs.c
 
 $(TIMER):
 	@echo $(DIVIDER)
