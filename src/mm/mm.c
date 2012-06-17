@@ -24,6 +24,7 @@
  */
 
 #include "mm.h"
+#include "log/log.h"
 #include <malloc.h>
 #include <string.h>
 #include <sys/errno.h>
@@ -37,6 +38,7 @@ MemoryRegion *allocRegions = NULL;
 MemoryRegion *loadedPages[__MM_MAX_ACTIVE_TLBS];
 
 char *heap_end = 0;
+char *curr_heap_top = 0;
 
 /* Use this until we have decided on a page replacement strategy */
 U8 currTlbIdx = 0;
@@ -50,18 +52,25 @@ caddr_t sbrk(int incr)
      extern char heap_low; /* Defined by the linker */
      extern char heap_top; /* Defined by the linker */
      char *prev_heap_end;
+
+     if( curr_heap_top == 0 )
+	  curr_heap_top = &heap_top;
 	 
-     if(heap_end == 0)
+     if( heap_end == 0 )
      {
 	  heap_end = &heap_low;
      }
 
      prev_heap_end = heap_end;
 	 
-     if (heap_end + incr > &heap_top)
+     while( heap_end + incr > curr_heap_top )
      {
-	  /* Heap and stack collision */
-	  return (caddr_t)0;
+	  /* Grab another 1MB of memory for heap */
+	  __mm_map_region((int)curr_heap_top, (int)curr_heap_top, 0, __MM_SIZE_1MB,
+			  TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_SX,
+			  TLB_ATTR_NONE, __MM_WRITE_TLB, TLB_SIZE_1MB);
+
+	  curr_heap_top += 0x100000;
      }
      
      heap_end += incr;
@@ -91,6 +100,12 @@ void __mm_init()
      /* Hard coded for now... */
      __mm_map_region(0x1000000, 0x1000000, 0, __MM_SIZE_1MB,
 		   TLB_PERM_SR|TLB_PERM_SX,
+		   TLB_ATTR_NONE, __MM_LOCK_TLB|__MM_WRITE_TLB, TLB_SIZE_1MB);
+
+     /* Set up a TLB entry to cover the initial heap for the kernel */
+     /* Hard coded for now... */
+     __mm_map_region(0x1100000, 0x1100000, 0, __MM_SIZE_1MB,
+		   TLB_PERM_SR|TLB_PERM_SW|TLB_PERM_SX,
 		   TLB_ATTR_NONE, __MM_LOCK_TLB|__MM_WRITE_TLB, TLB_SIZE_1MB);
 
      /*
@@ -254,7 +269,7 @@ int __mm_map_region(U32 vBase, U32 pBase, U8 erpn, S32 size, U8 perms, U8 attr, 
 
      /* For now, allow only 1K, 4K and 1M pages  */
      if( size == 0 ||
-		     (pageSize != TLB_SIZE_1KB && pageSize != TLB_SIZE_4KB && pageSize != TLB_SIZE_1MB) )
+	 (pageSize != TLB_SIZE_1KB && pageSize != TLB_SIZE_4KB && pageSize != TLB_SIZE_1MB) )
      {
 	  errno = EINVAL;
 	  return EERROR;

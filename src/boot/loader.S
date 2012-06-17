@@ -47,6 +47,9 @@ _init_tlb:
 #;		and maps 0x00F00000 to 0x00F00000
 #;	TLB 4 will cover the text area of the kernel in RAM,
 #;		and maps 0x01000000 to 0x01000000
+#;	TLB 5 will cover the initial heap for the kernel in RAM,
+#;		and maps 0x01100000 to 0x01100000
+
 #;	
 #;	The memory manager will reconfigure the TLBs when started
 
@@ -86,6 +89,11 @@ _init_tlb:
 	li	r0,0x010
 	li	r1,0x010
 	li	r3,4
+	bl	_create_tlb_entry
+	
+	li	r0,0x011
+	li	r1,0x011
+	li	r3,5
 	bl	_create_tlb_entry
 
 #;      Force CPU to update shadow TLB

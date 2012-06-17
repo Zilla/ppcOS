@@ -28,9 +28,9 @@
 
 MEMORY
 {
-	data	: ORIGIN = 0x00F00000, LENGTH = 0x0070000
-	heap	: ORIGIN = 0x00F70000, LENGTH = 0x0090000
+	data	: ORIGIN = 0x00F00000, LENGTH = 0x0100000
 	text	: ORIGIN = 0x01000000, LENGTH = 0x0100000
+	heap	: ORIGIN = 0x01100000, LENGTH = 0x0100000
 }
 
 /* Define program entry point */
@@ -55,15 +55,12 @@ SECTIONS
 		*(.bss)
 	} > data
 
-	.heap :
-	AT ( ADDR(.data) + SIZEOF (.data) )
+	.stack :
 	{
-		heap_low = .;
-		. = . + 0x80000;
-		heap_top = .;
 		. = . + (0x10000 - 0x10); /* 64k stack */
 		stack_top = .;
-	} > heap
+	} > data
+
 	/* .text contains compiled code */
 	.text :
 	{
@@ -87,4 +84,12 @@ SECTIONS
 		*(.dtors)
 		*(.dtors.*)
 	} > text
+
+	.heap :
+	AT ( ADDR(.dtors) + SIZEOF (.dtors) )
+	{
+		heap_low = .;
+		. = . + 0x100000;
+		heap_top = .;
+	} > heap
 }

@@ -65,7 +65,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      pProc = (__Process *)malloc(sizeof(__Process));
      if( pProc == NULL )
      {
-	  ERROR("Failed to allocate process struct");
+	  ERROR(STR("Failed to allocate process struct due to error %d", errno));
 	  return EERROR;
      }
 
@@ -112,7 +112,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
      pProc->pReadyNext = NULL;
 
      /* Set up default file descriptors (STDIN, STDOUT, STDERR) */
-     __vfs_init_proc(pProc->pid);
+     __vfs_init_proc( pProc->pid );
      
      /* Open descriptors, ignore return values (allow failure) */
      open("/dev/tty", O_RDONLY); /* STDIN */

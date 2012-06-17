@@ -208,7 +208,7 @@ void __vfs_init()
 void __vfs_init_proc(U32 pid)
 {
      __ProcFileDesc *fdl;
-     fdl = malloc( sizeof(__FileDesc) );
+     fdl = malloc( sizeof(__ProcFileDesc) );
 
      fdl->pid     = pid;
      fdl->numOpen = 0;

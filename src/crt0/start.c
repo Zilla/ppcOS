@@ -30,6 +30,7 @@
 #include "proc/process.h"
 #include "proc/test_proc.h"
 #include "vfs/vfs.h"
+#include "log/log.h"
 
 #include "krntypes.h"
 
