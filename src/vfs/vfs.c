@@ -252,8 +252,7 @@ int __vfs_mount(char *source, char *destination, char *type, U32 flags)
      __FileSystem *fs = NULL;
      int ret;
 
-     if( source == NULL || strlen(source) == 0 ||
-	 destination == NULL || strlen(destination) == 0 || 
+     if( destination == NULL || strlen(destination) == 0 || 
 	 type == NULL || strlen(type) == 0 )
      {
 	  errno = EINVAL;

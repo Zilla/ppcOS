@@ -29,8 +29,11 @@ UART   = $(BUILDDIR)/uartl.o
 PROC   = $(BUILDDIR)/procl.o
 SCHED  = $(BUILDDIR)/schedl.o
 VFS    = $(BUILDDIR)/vfsl.o
+PFS    = $(BUILDDIR)/pfsl.o
+DEVFS  = $(BUILDDIR)/devfsl.o
 
-OBJS=$(CRT0) $(IRQ) $(MM) $(TIMER) $(UART) $(LOG) $(PROC) $(SCHED) $(VFS)
+
+OBJS=$(CRT0) $(IRQ) $(MM) $(TIMER) $(UART) $(LOG) $(PROC) $(SCHED) $(VFS) $(PFS) $(DEVFS)
 
 export CC CFLAGS INCDIRS LDFLAGS BUILDDIR AR ARFLAGS
 
@@ -108,6 +111,16 @@ $(VFS):
 	@echo $(DIVIDER)
 	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
 	@$(SUBMAKE) -C src/vfs
+
+$(PFS):
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/fs/pfs
+
+$(DEVFS):
+	@echo $(DIVIDER)
+	@echo "Building $(BSTART)$(notdir $@)$(BEND)"
+	@$(SUBMAKE) -C src/fs/devfs
 
 .PHONY: clean
 clean:
