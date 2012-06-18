@@ -200,6 +200,29 @@ int read(int fd, void *ptr, int len)
      return fs->fops.read( pfd->openFdList[fd].fsFd, ptr, len );
 }
 
+int write(int fd, void *ptr, int len)
+{
+     __ProcFileDesc *pfd = __vfs_get_proc_fd( current_process() );
+     __FileSystem *fs;
+
+     if( pfd == NULL || pfd->openFdList[fd].fsFd == 0 )
+     {
+	  errno = EBADF;
+	  return EERROR;
+     }
+
+     fs = pfd->openFdList[fd].fs;
+
+     if( fs->fops.read == NULL )
+     {
+	  errno = EINVAL;
+	  return EERROR;
+     }
+
+     return fs->fops.write( pfd->openFdList[fd].fsFd, ptr, len );
+}
+
+
 void __vfs_init()
 {
      /* Currently empty */

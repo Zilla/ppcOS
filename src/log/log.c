@@ -26,6 +26,7 @@
 #include "log.h"
 #include "timer/timer.h"
 #include "arch/ppc440.h"
+#include "uart/uart.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -37,6 +38,8 @@ char msgBuffer[MAX_LOG_STR_LEN];
 void write_log(char *filename, U32 lineno, const char *function, const char *message, U8 type)
 {
      U32 msr;
+     char logBuffer[MAX_LOG_STR_LEN];
+     int logLen;
 
      if( !filename )
 	  filename = strNull;
@@ -51,8 +54,9 @@ void write_log(char *filename, U32 lineno, const char *function, const char *mes
      WRTEEI(0);
      ISYNC;
 
-     /* TODO: Add timestamps */
-     printf("[%u] %s %s:%u %s: %s\n", get_ticks(), function, filename, lineno, msgTypes[type], message);
+     logLen = snprintf(logBuffer, MAX_LOG_STR_LEN, "[%u] %s %s:%u %s: %s\n",
+		       get_ticks(), function, filename, lineno, msgTypes[type], message);
+     uart_write( logBuffer, logLen );
 
      MTMSR(msr);
      ISYNC;

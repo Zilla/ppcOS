@@ -75,11 +75,10 @@ void uart_init()
      INFO("UART initilized");
 }
 
-/* Used by sbrk(), printf(), etc */
-int write(int file, const void *ptr, size_t len)
+int uart_write(const void *buf, int len)
 {
      U32 written = 0, msr;
-     U8 *cPtr = (U8 *)ptr;
+     U8 *cPtr = (U8 *)buf;
      
      if( uartInitDone == 0 )
      {
@@ -90,10 +89,6 @@ int write(int file, const void *ptr, size_t len)
      MFMSR(msr);
      WRTEEI(0);
      ISYNC;
-
-     /* We only support STDOUT here atm */
-     if( file != STDOUT_FILENO )
-	  return len;
 
      if( len <= 0 )
      {

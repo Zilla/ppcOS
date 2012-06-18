@@ -111,5 +111,6 @@
 #define UART_WAIT(reg) while(!(UART_READ(reg) & UART_LSR_EMPTY));
 
 void uart_init();
+int uart_write(const void *buf, int len);
 
 #endif  /* _ppcos_uart_h_ */

@@ -102,5 +102,6 @@ int fstat(int fd, struct stat *st);
 int isatty(int fd);
 int lseek(int fd, int offset, int whence);
 int read(int fd, void *ptr, int len);
+int write(int fd, void *ptr, int len);
 
 #endif  /* _ppcos_vfs_h_ */
