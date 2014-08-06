@@ -27,14 +27,41 @@
 #include "devfs.h"
 #include "log/log.h"
 
+U8 isMounted = 0;
+char *root[__VFS_MAX_PATH_LEN];
+
 int __devfs_mount(char *source, char *destination, U32 flags)
 {
+     if( isMounted != 0 )
+     {
+	  errno = EINVAL;
+	  TRACE_ERROR("DevFS can only be mounted once!");
+	  return -1;
+     }
+
      INFO(STR("Mounting devfs at %s", destination));
+
+     isMounted = 1;
+     strncpy( root, destination, __VFS_MAX_PATH_LEN );
+     char *root[__VFS_MAX_PATH_LEN] = '\0';
+
      return 0;
 }
 
 int __devfs_umount(char *path, U32 flags)
 {
+
+     if( isMounted == 0 )
+     {
+	  errno = EINVAL;
+	  TRACE_ERROR("Attempting to unmount DevFS which is currently not mounted!");
+	  return -1;
+     }
+
+     /* TODO: Check open files etc */
+     isMounted = 0;
+     root[0] = '\0';
+
      return 0;
 }
 
@@ -90,6 +117,11 @@ dir_ptr_t __devfs_opendir(char *path)
 }
 
 int __devfs_closedir(dir_ptr_t *dir)
+{
+     return 0;
+}
+
+int __devfs_register_device( char *name, __FileOps *fops )
 {
      return 0;
 }
