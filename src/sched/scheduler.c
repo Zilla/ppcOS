@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, Joakim Östlund
+/* Copyright (c) 2014, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,7 @@
 #include "proc/process.h"
 #include "log/log.h"
 #include "arch/ppc440.h"
+#include "linkutil.h"
 
 #include <string.h>
 
@@ -71,12 +72,7 @@ void sched_invoke(bool isInterrupt)
 		    else
 		    {
 			 /* At least one other process is ready, put at end of list */
-			 __Process *pLink = __procReadyList[pCurr->prio];
-			 
-			 while(pLink->pReadyNext != NULL)
-			      pLink = pLink->pReadyNext;
-			 
-			 pLink->pReadyNext = pCurr;
+			 LINK_AT_END_EX(__Process, pCurr, __procReadyList[pCurr->prio], pReadyNext);
 		    }
 		    
 		    pCurr->state = __PROC_READY;
@@ -126,6 +122,7 @@ void sched_invoke(bool isInterrupt)
      {
 	  ERROR("Failed to find a process to run!");
 	  pNew = __procList;
+	  /* Dump error information */
 	  while(pNew)
 	  {
 	       INFO(STR("pNew: 0x%x, pNew->pNext: 0x%x", pNew, pNew->pNext));

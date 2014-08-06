@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, Joakim Östlund
+/* Copyright (c) 2014, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,6 +25,7 @@
 
 #include "vfs.h"
 #include "proc/process.h"
+#include "linkutil.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -243,11 +244,7 @@ void __vfs_init_proc(U32 pid)
 	  __fd_list = fdl;
      else
      {
-	  __ProcFileDesc *fdl_p = __fd_list;
-	  while( fdl_p->pNext )
-	       fdl_p = fdl_p->pNext;
-
-	  fdl_p->pNext = fdl;
+	  LINK_AT_END(__ProcFileDesc, fdl, __fd_list);
      }
 }
 
@@ -307,12 +304,7 @@ int __vfs_mount(char *source, char *destination, char *type, U32 flags)
 	  __mount_list = me;
      else
      {
-	  __MountEntry *mel = __mount_list;
-
-	  while( mel->pNext != NULL )
-	       mel = mel->pNext;
-
-	  mel->pNext = me;
+	  LINK_AT_END( __MountEntry, me, __mount_list );
      }
 
      return 0;
@@ -346,12 +338,7 @@ int __vfs_register_fs(char *type, __FileOps *fops)
 	  __fs_list = fs;
      else
      {
-	  __FileSystem *fs_p = __fs_list;
-
-	  while( fs_p->pNext != NULL )
-	       fs_p = fs_p->pNext;
-
-	  fs_p->pNext = fs;
+	  LINK_AT_END( __FileSystem, fs, __fs_list );
      }
 
      return 0;

@@ -27,6 +27,7 @@
 #include "log/log.h"
 #include "sched/scheduler.h"
 #include "arch/ppc440.h"
+#include "linkutil.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -82,18 +83,20 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
 
      /* Copy process name */
      strncpy( pProc->pcb.procName, procName, __MAX_PROC_NAME_LEN );
+
      /* There is no guarantee that strncpy adds string terminator if len = maxLen */
      pProc->pcb.procName[__MAX_PROC_NAME_LEN] = '\0';
 
      /* Set default values for register */
      memset( pProc->pcb.regs, 0, sizeof(U32) * __PROC_NUM_REGS );
+
      /* Set stack pointer in r1, leave room for one U32 */
-     pProc->pcb.regs[__PROC_REG_STACK_PTR] = (U32)(pProc->stack - sizeof(U32)); /* FIXME -> this is actually -16 */
+     pProc->pcb.regs[__PROC_REG_STACK_PTR] = (U32)(((U8 *)pProc->stack) - sizeof(U32));
      
-     /* For now we do not handle processes exiting, so set LR to CI */
+     /* For now we do not handle processes exiting, so set LR to Critial Interrupt */
      pProc->pcb.regs[__PROC_REG_LR] = 0x0;
 
-     /* Set PC to start of process */
+     /* Set PC to process entry point */
      pProc->pcb.regs[__PROC_REG_PC] = (U32)entryPoint;
      pProc->entryPoint              =      entryPoint;
 
@@ -124,12 +127,7 @@ U32 create_process(char *procName, OSPROC entryPoint, U8 prio, U16 stackSize)
 	  __procList = pProc;
      else
      {
-	  __Process *pLink = __procList;
-
-	  while( pLink->pNext != NULL )
-	       pLink = pLink->pNext;
-
-	  pLink->pNext = pProc;
+	  LINK_AT_END(__Process, pProc, __procList);
      }
 
      INFO(STR("Created process %s, pid: %u", pProc->pcb.procName, pProc->pid));
@@ -157,12 +155,7 @@ void start_process(U32 pid)
 	  __procReadyList[pProc->prio] = pProc;
      else
      {
-	  __Process *pLink = __procReadyList[pProc->prio];
-
-	  while( pLink->pReadyNext != NULL )
-	       pLink = pLink->pReadyNext;
-
-	  pLink->pReadyNext = pProc;
+	  LINK_AT_END_EX(__Process, pProc, __procReadyList[pProc->prio], pReadyNext);
      }
 
      INFO(STR("Started process %u", pProc->pid));
@@ -246,7 +239,6 @@ void sleep(U32 milliSeconds)
      /* 
 	We allow a sleep of 0 ms, which will put us
 	to ready at next scheduler invocation.
-	Negative values will be treated the same.
      */
 
      U32 msr;

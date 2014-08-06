@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, Joakim Östlund
+/* Copyright (c) 2014, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,18 +24,19 @@
  */
 
 #include <errno.h>
+#include <string.h>
 #include "devfs.h"
 #include "log/log.h"
 
 U8 isMounted = 0;
-char *root[__VFS_MAX_PATH_LEN];
+char root[__VFS_MAX_PATH_LEN];
 
 int __devfs_mount(char *source, char *destination, U32 flags)
 {
      if( isMounted != 0 )
      {
 	  errno = EINVAL;
-	  TRACE_ERROR("DevFS can only be mounted once!");
+	  ERROR("DevFS can only be mounted once!");
 	  return -1;
      }
 
@@ -43,7 +44,7 @@ int __devfs_mount(char *source, char *destination, U32 flags)
 
      isMounted = 1;
      strncpy( root, destination, __VFS_MAX_PATH_LEN );
-     char *root[__VFS_MAX_PATH_LEN] = '\0';
+     root[__VFS_MAX_PATH_LEN] = '\0';
 
      return 0;
 }
@@ -54,7 +55,7 @@ int __devfs_umount(char *path, U32 flags)
      if( isMounted == 0 )
      {
 	  errno = EINVAL;
-	  TRACE_ERROR("Attempting to unmount DevFS which is currently not mounted!");
+	  ERROR("Attempting to unmount DevFS which is currently not mounted!");
 	  return -1;
      }
 

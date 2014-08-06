@@ -1,4 +1,4 @@
-#; Copyright (c) 2011, Joakim Östlund
+#; Copyright (c) 2014, Joakim Östlund
 #; All rights reserved.		
 #;
 #; Redistribution and use in source and binary forms, with or without
@@ -23,7 +23,9 @@
 #; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#; Reset vector instruction 
+#; Reset vector instruction
+#; This instruction will be executed as soon as the board is powered on.
+#; The only thing we do here is branch to the "main" loader function.
 	.section .reset,"ax"
 	.global _reset
 _reset:
@@ -54,7 +56,7 @@ _init_tlb:
 #;	The memory manager will reconfigure the TLBs when started
 
 	
-#;	Map the boot loader flash area to TBL 0
+#;	Map the boot loader flash area to TLB 0
 #;	Since our data is stored at the 33-bit physical address 0x1_FFF0_0000,
 #;	we set ERPN to 1
 	li	r0,0xFFF
@@ -104,7 +106,7 @@ _init_tlb:
 #;************************************************************
 #; This function copies the kernel image from flash to RAM.
 #; For now, everything is hardcoded.
-#; Also, this copy rutine is horribly ineffective.
+#; Also, this copy rutine is horribly inefficient.
 #;************************************************************
 
 _copy_kernel_image:
@@ -113,11 +115,11 @@ _copy_kernel_image:
 	li	r1,0xFFC
 	slwi	r1,r1,20
 
-#;	Load end address into r2	
+#;	Load end address into r2
 	li	r2,0xFFE
 	slwi	r2,r2,20
 	subi	r2,r2,4
-	
+
 #;	Load target address into r3
 	li	r3,0x00F
 	slwi	r3,r3,20
@@ -128,9 +130,9 @@ _copy_kernel_image:
 
 _copy_loop:
 #;	Loop and copy the rest of the words
-	cmpw	r1,r2		#; Check if copy is done
-	beq	_start_kernel	#; Start kernel	
-	lwzu	10,4(r1)
+	cmpw	r1,r2		#; Check if copy is done, and if so
+	beq	_start_kernel	#; Start kernel
+	lwzu	10,4(r1)	#; Else, continue to copy
 	stwu	10,4(r3)
 	b	_copy_loop
 
@@ -163,7 +165,7 @@ _start_kernel:
 _create_tlb_entry:
 	
 #;	Each TLB entry consists of 96 + 8 bits of information.
-#;	
+#;
 #;	Since we cannot write this in one operation, three TLB words will
 #;	be constructed, and written to the TLB one at a time. The extra
 #;	8 bytes are written together with word 0, and comes from MMUCR[STID].
@@ -194,20 +196,20 @@ _create_tlb_entry:
 #;	This value is not set in r5, but rather in MMUCR[STID].
 	
 
-#;	EPN 
+#;	EPN
 	slwi	r5,r0,20
 
-#;	V 
+#;	V
 	li	r10,1
 	slwi	r10,r10,9
 	or	r5,r5,10
 
-#;	SIZE 
+#;	SIZE
 	li	r10,5
 	slwi	r10,r10,4
 	or	r5,r5,10
 
-#;	TID 
+#;	TID
 	mfspr	r10,0x3B2
 	rlwinm  r10,r10,0,0,23	#; Mask out bit 24:31 
 	mtspr	0x3B2,r10
@@ -220,7 +222,7 @@ _create_tlb_entry:
 #;
 #;	RPN is the Real Page Number, and is the base of the physical
 #;	address that the page relates to. The rules for RPN is the same
-#;	as for EPB above. We will set bit 0:11 to the value of r2.
+#;	as for EPN above. We will set bit 0:11 to the value of r2.
 #;
 #;	PAR1 are the parity bits for page 1, and are ignored at write.
 #;

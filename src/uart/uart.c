@@ -1,4 +1,4 @@
- /* Copyright (c) 2011, Joakim Östlund
+ /* Copyright (c) 2014, Joakim Östlund
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@ void uart_init()
      reg |= UART_LCR_DLAB_ENABLE;
      UART_WRITE(UART0_LCR, reg);
 
-     /* Write divisor values */
+     /* Write divisor values, setting UART speed to 9600 bps */
      UART_WRITE(UART0_DLL, UART_DLL_9600);
      UART_WRITE(UART0_DLM, UART_DLM_9600);
 
@@ -61,7 +61,7 @@ void uart_init()
      reg &= UART_LCR_DLAB_MASK;
      UART_WRITE(UART0_LCR, reg);
 
-     /* Set serial port parameters */
+     /* Set serial port parameters for 8bit words, odd parity */
      reg = UART_READ(UART0_LCR);
      reg |= UART_LCR_8BIT_WORD|UART_LCR_PARITY_ODD;
      UART_WRITE(UART0_LCR, reg);
